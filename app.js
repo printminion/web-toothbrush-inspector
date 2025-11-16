@@ -1,3 +1,9 @@
+/**
+ * Web Toothbrush Inspector
+ * Copyright (c) 2025 @printminion
+ * Licensed under the MIT License - see LICENSE file for details
+ */
+
 // Sonicare Web - Main JavaScript file
 
 function showMessage() {

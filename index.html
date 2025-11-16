@@ -1,60 +1,2763 @@
 <!DOCTYPE html>
+<!--
+    Web Toothbrush Inspector
+    Copyright (c) 2025 @printminion
+    Licensed under the MIT License - see LICENSE file for details
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web Toothbrush Inspector for Sonicare Toothbrush</title>
+    <!-- 1. Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 2. Chart.js for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 3. Three.js for 3D visualization -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
     <style>
+        /* Simple dark mode */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
-            color: #333;
+            font-family: 'Inter', sans-serif;
         }
-        h1 {
-            color: #2563eb;
+        canvas {
+            width: 100%;
+            height: 100%;
         }
-        .content {
-            background: #f3f4f6;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-        button {
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background: #1d4ed8;
-        }
-        #message {
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .success {
-            background: #d1fae5;
-            color: #065f46;
+        .calibration-step.hidden {
+            display: none !important;
         }
     </style>
 </head>
-<body>
-    <h1>Welcome to Sonicare Web</h1>
-    
-    <div class="content">
-        <p>Disclaimer: This is an independent, unofficial, open-source project. It is not affiliated with, endorsed by, or sponsored by Koninklijke Philips N.V. or any of its "Sonicare" branded products. All trademarks, logos, and brand names are the property of their respective owners.</p>
-        <p>Click the button below to see JavaScript in action:</p>
-        <button onclick="showMessage()">Click Me!</button>
-        <div id="message"></div>
-    </div>
+<body class="bg-gray-900 text-gray-100 min-h-screen p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+        
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between md:items-center mb-3">
+            <div>
+                <h1 class="text-xl font-bold text-white">Sonicare Web Bluetooth Dashboard</h1>
+                <p class="text-sm text-blue-300">Real-time data from your toothbrush</p>
+            </div>
+            <button id="connect-button" class="mt-2 md:mt-0 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 text-sm rounded-lg shadow-lg transition duration-300 ease-in-out">
+                Connect to Toothbrush
+            </button>
+        </header>
 
-    <script src="app.js"></script>
+        <!-- Disclaimer -->
+        <div class="bg-gray-800/50 border border-gray-600 text-gray-300 px-4 py-3 rounded-lg mb-4 text-xs">
+            <strong class="font-semibold">Disclaimer:</strong>
+            <span class="block sm:inline">This is an independent, unofficial, open-source project. It is not affiliated with, endorsed by, or sponsored by Koninklijke Philips N.V. or any of its "Sonicare" branded products. All trademarks, logos, and brand names are the property of their respective owners.</span>
+        </div>
+
+        <!-- Status & Instructions -->
+        <div id="status-alert" class="bg-blue-900/50 border border-blue-700 text-blue-200 px-4 py-3 rounded-lg relative mb-6" role="alert">
+            <strong class="font-bold">BEST METHOD:</strong>
+            <span class="block sm:inline">🔌 Place toothbrush on charger (LED should light up) → Click Connect → Select device</span>
+            <p class="text-xs mt-1 opacity-75">Alternative: Press power button → immediately click Connect</p>
+            <p id="status-message" class="text-sm mt-2 font-semibold">Status: Not Connected</p>
+            <div id="connection-progress" class="hidden mt-2">
+                <div class="flex justify-between items-center mb-1">
+                    <p id="progress-text" class="text-xs">Preparing...</p>
+                    <p id="countdown-timer" class="text-xs font-mono bg-black/30 px-2 py-0.5 rounded"></p>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2.5">
+                    <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Column 1: Data Dashboard -->
+            <div class="lg:col-span-1 space-y-2">
+                <h2 class="text-lg font-semibold mb-1">Device Data</h2>
+                
+                <!-- Battery -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Battery Level</h3>
+                    <p id="data-battery" class="text-xl font-bold text-white">--- %</p>
+                </div>
+                
+                <!-- Handle State -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Handle State</h3>
+                    <p id="data-handle-state" class="text-xl font-bold text-white">---</p>
+                </div>
+
+                <!-- Handle Time -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Handle Time</h3>
+                    <p id="data-handle-time" class="text-sm font-bold text-white">---</p>
+                </div>
+
+                <!-- Routine ID -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Routine ID</h3>
+                    <p id="data-routine-id" class="text-xl font-bold text-white">---</p>
+                </div>
+
+                <!-- Motor Runtime -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Motor Runtime</h3>
+                    <p id="data-motor-runtime" class="text-sm font-bold text-white">---</p>
+                </div>
+
+                <!-- Brushing Mode -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brushing Mode</h3>
+                    <p id="data-mode" class="text-xl font-bold text-white">---</p>
+                </div>
+
+                <!-- Session State -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Session State</h3>
+                    <p id="data-session-state" class="text-xl font-bold text-white">---</p>
+                </div>
+
+                <!-- Current Session ID -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Current Session ID</h3>
+                    <p id="data-session-id" class="text-xl font-bold text-white">---</p>
+                </div>
+
+                <!-- Routine Number -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Routine Number</h3>
+                    <p id="data-routine-number" class="text-xl font-bold text-white">---</p>
+                </div>
+
+                <!-- Routine Length -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Routine Length</h3>
+                    <p id="data-routine-length" class="text-sm font-bold text-white">---</p>
+                </div>
+
+                <!-- Active Time -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Active Time</h3>
+                    <p id="data-active-time" class="text-xl font-bold text-white">---</p>
+                </div>
+
+                <!-- Brushing Strength -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brushing Strength</h3>
+                    <p id="data-strength" class="text-xl font-bold text-white">---</p>
+                </div>
+
+                <!-- Brush Head Information Header -->
+                <div class="col-span-1 mt-2">
+                    <h2 class="text-lg font-semibold mb-1 text-green-300">Brush Head Information</h2>
+                </div>
+
+                <!-- Brush Head ID -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head ID (Hex)</h3>
+                    <p id="data-brush-serial" class="text-base font-bold text-white font-mono">---</p>
+                </div>
+
+                <!-- NFC Tag Version -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">NFC Tag Version</h3>
+                    <p id="data-nfc-tag-version" class="text-base font-bold text-white">---</p>
+                </div>
+
+                <!-- Factory Mode -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Factory Mode</h3>
+                    <p id="data-factory-mode" class="text-base font-bold text-white">---</p>
+                </div>
+
+                <!-- Lifetime Limit -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Lifetime Limit</h3>
+                    <p id="data-lifetime-limit" class="text-base font-bold text-white">---</p>
+                </div>
+
+                <!-- Brush Type -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head Type</h3>
+                    <p id="data-brush-type" class="text-base font-bold text-white">---</p>
+                </div>
+
+                <!-- Brush Usage -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head Usage</h3>
+                    <p id="data-brush-usage" class="text-xl font-bold text-white">---</p>
+                </div>
+
+                <!-- Brush Head Char 4270 -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 4270</h3>
+                    <p id="data-brush-head-4270" class="text-base font-bold text-white">---</p>
+                </div>
+
+                <!-- Brush Head Char 4280 -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 4280</h3>
+                    <p id="data-brush-head-4280" class="text-base font-bold text-white">---</p>
+                </div>
+
+                <!-- Brush Head Char 42A2 -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 42A2</h3>
+                    <p id="data-brush-head-42a2" class="text-base font-bold text-white">---</p>
+                </div>
+
+                <!-- Brush Head Char 42A4 -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 42A4</h3>
+                    <p id="data-brush-head-42a4" class="text-base font-bold text-white">---</p>
+                </div>
+
+                <!-- Brush Head Char 42A6 -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 42A6</h3>
+                    <p id="data-brush-head-42a6" class="text-base font-bold text-white">---</p>
+                </div>
+
+                <!-- Brush Head NFC URL -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">NFC Brush Head URL</h3>
+                    <p id="data-brush-head-nfc-url" class="text-sm font-bold text-white break-all">---</p>
+                </div>
+
+                <!-- Brush Head Char 42C0 -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 42C0</h3>
+                    <p id="data-brush-head-42c0" class="text-base font-bold text-white">---</p>
+                </div>
+
+                <!-- Diagnostic Information Header -->
+                <div class="col-span-1 mt-2">
+                    <h2 class="text-lg font-semibold mb-1 text-yellow-300">Diagnostic Information</h2>
+                </div>
+
+                <!-- Error Persistent -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Error (Persistent)</h3>
+                    <p id="data-error-persistent" class="text-base font-bold text-white">---</p>
+                </div>
+
+                <!-- Error Volatile -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Error (Volatile)</h3>
+                    <p id="data-error-volatile" class="text-base font-bold text-white">---</p>
+                </div>
+
+                <!-- Proximity Value -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Proximity Value</h3>
+                    <p id="data-proximity-value" class="text-base font-bold text-white">---</p>
+                </div>
+
+                <!-- Pressure Sensor -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Pressure Sensor</h3>
+                    <p id="data-pressure-sensor" class="text-base font-bold text-white">---</p>
+                </div>
+
+                <!-- Invalid Charger Count -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Invalid Charger Count</h3>
+                    <p id="data-invalid-charger-count" class="text-base font-bold text-white">---</p>
+                </div>
+
+                <!-- Debug Info -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md col-span-1">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Debug Information</h3>
+                    <p id="data-debug-info" class="text-sm font-bold text-white break-all">---</p>
+                </div>
+
+                <!-- Device Information Header -->
+                <div class="col-span-1 mt-2">
+                    <h2 class="text-lg font-semibold mb-1 text-blue-300">Device Information</h2>
+                </div>
+
+                <!-- Manufacturer -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Manufacturer</h3>
+                    <p id="data-manufacturer" class="text-base font-bold text-white">---</p>
+                </div>
+
+                <!-- Model Number -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Model Number</h3>
+                    <p id="data-model" class="text-base font-bold text-white">---</p>
+                </div>
+
+                <!-- Device Serial -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Device Serial Number</h3>
+                    <p id="data-device-serial" class="text-sm font-bold text-white font-mono">---</p>
+                </div>
+
+                <!-- Firmware Version -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Firmware Version</h3>
+                    <p id="data-firmware" class="text-sm font-bold text-white">---</p>
+                </div>
+
+                <!-- Hardware Revision -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Hardware Revision</h3>
+                    <p id="data-hardware" class="text-sm font-bold text-white">---</p>
+                </div>
+
+                <!-- Software Revision -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Software Revision</h3>
+                    <p id="data-software" class="text-sm font-bold text-white">---</p>
+                </div>
+
+                <!-- Sensor Configuration -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">Sensor Config (4120)</h3>
+                    <p id="data-sensor-config" class="text-sm font-bold text-white">---</p>
+                </div>
+
+                <!-- System ID -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">System ID</h3>
+                    <p id="data-system-id" class="text-sm font-bold text-white">---</p>
+                </div>
+
+                <!-- IEEE Regulatory Data -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">IEEE 11073 Regulatory</h3>
+                    <p id="data-ieee-regulatory" class="text-sm font-bold text-white">---</p>
+                </div>
+
+                <!-- PnP ID -->
+                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                    <h3 class="text-xs font-medium text-gray-400 uppercase">PnP ID</h3>
+                    <p id="data-pnp-id" class="text-sm font-bold text-white">---</p>
+                </div>
+            </div>
+
+            <!-- Column 2: Visualizations -->
+            <div class="lg:col-span-2 space-y-3">
+                <!-- 3D Visualization -->
+                <div>
+                    <h2 class="text-lg font-semibold mb-1">3D Orientation</h2>
+                    <div id="three-container" class="bg-gray-800 rounded-lg shadow-md h-96 w-full relative">
+                        <div id="three-info" class="absolute top-2 left-2 bg-black/50 text-white text-xs p-2 rounded">
+                            Pitch: <span id="pitch-value">0°</span><br>
+                            Roll: <span id="roll-value">0°</span><br>
+                            Yaw: <span id="yaw-value">0°</span><br>
+                            <span class="text-yellow-300">⟲ Rotation: <span id="rotation-speed">0</span>°/s</span><br>
+                            
+                            <!-- Circular rotation indicator -->
+                            <div class="mt-2 flex items-center gap-2">
+                                <div class="relative w-12 h-12">
+                                    <svg viewBox="0 0 100 100" class="w-full h-full">
+                                        <!-- Background circle -->
+                                        <circle cx="50" cy="50" r="45" fill="none" stroke="#374151" stroke-width="2"/>
+                                        <!-- Reference marker at top -->
+                                        <circle cx="50" cy="10" r="3" fill="#60a5fa"/>
+                                        <!-- Rotation indicator line (inside group for rotation) -->
+                                        <g id="rotation-indicator">
+                                            <line x1="50" y1="50" x2="50" y2="10" 
+                                                  stroke="#ef4444" stroke-width="4" stroke-linecap="round"/>
+                                        </g>
+                                        <!-- Center dot (on top) -->
+                                        <circle cx="50" cy="50" r="5" fill="#ef4444"/>
+                                    </svg>
+                                </div>
+                                <div class="text-xs">
+                                    <div class="font-semibold text-yellow-300">Brush Spin</div>
+                                    <div><span id="yaw-degrees-display">0</span>°</div>
+                                </div>
+                            </div>
+                            
+                            <button id="reset-yaw-button" class="mt-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-1 px-2 rounded">
+                                Reset Yaw
+                            </button>
+                            <button id="debug-packets-button" class="mt-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-1 px-2 rounded">
+                                🔍 Debug Packets
+                            </button>
+                            <div class="mt-2 flex gap-1">
+                                <button id="rotate-left-button" class="bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold py-1 px-2 rounded">
+                                    ← Rotate Left
+                                </button>
+                                <button id="rotate-right-button" class="bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold py-1 px-2 rounded">
+                                    Rotate Right →
+                                </button>
+                            </div>
+                            <button id="calibration-wizard-button" class="mt-2 w-full bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-2 rounded">
+                                🎯 Calibration Wizard
+                            </button>
+                        </div>
+                        <div id="button-legend" class="absolute top-2 right-2 bg-black/50 text-white text-xs p-2 rounded">
+                            <div class="font-semibold mb-1">Orientation Markers:</div>
+                            <div class="flex items-center gap-1"><span class="inline-block w-3 h-3 bg-red-500 rounded-full"></span> Power Button</div>
+                            <div class="flex items-center gap-1"><span class="inline-block w-1 h-3 bg-yellow-300"></span> Back Marker</div>
+                        </div>
+                        <div id="coordinate-debug" class="absolute bottom-2 left-2 bg-black/70 text-white text-xs rounded font-mono">
+                            <button id="coordinate-toggle" class="w-full text-left p-2 hover:bg-black/50 rounded font-semibold text-yellow-300 flex items-center justify-between">
+                                <span>🌍 Real World (Sensor)</span>
+                                <span id="coordinate-toggle-icon">▶</span>
+                            </button>
+                            <div id="coordinate-content" class="p-2 pt-0" style="display: none;">
+                                <div>X: <span id="real-x">0.000</span>g</div>
+                                <div>Y: <span id="real-y">0.000</span>g (brush length)</div>
+                                <div>Z: <span id="real-z">0.000</span>g</div>
+                                <div class="font-semibold mt-2 mb-1 text-cyan-300">🎮 Three.js World:</div>
+                                <div>X: <span id="threejs-x">0.000</span> (red axis)</div>
+                                <div>Y: <span id="threejs-y">0.000</span> (green axis)</div>
+                                <div>Z: <span id="threejs-z">0.000</span> (blue axis, UP)</div>
+                                <div class="font-semibold mt-2 mb-1 text-purple-300">📐 Rotation:</div>
+                                <div>Pitch: <span id="debug-pitch">0.0</span>° (X-axis)</div>
+                                <div>Roll: <span id="debug-roll">0.0</span>° (Y-axis)</div>
+                                <div>Yaw: <span id="debug-yaw">0.0</span>° (Z-axis)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sensor Graph -->
+                <div>
+                    <h2 class="text-lg font-semibold mb-1">Live Sensor Data (Gyro & Accelerometer)</h2>
+                    <div class="bg-gray-800 p-4 rounded-lg shadow-md h-96 w-full">
+                        <canvas id="sensor-chart-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div> <!-- /Main Content Grid -->
+
+        <!-- Footer / Social Links -->
+        <footer class="mt-8 border-t border-gray-700 pt-6">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="text-sm text-gray-400">
+                    <p class="mb-2">Like this project? Support the development!</p>
+                </div>
+                <div class="flex flex-wrap gap-3 items-center justify-center">
+                    <!-- GitHub -->
+                    <a href="https://github.com/printminion/web-toothbrush-inspector" target="_blank" rel="noopener noreferrer" 
+                       class="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out border border-gray-600 hover:border-purple-500">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
+                        </svg>
+                        <span class="font-medium">GitHub</span>
+                    </a>
+                    
+                    <!-- Twitter/X -->
+                    <a href="https://x.com/printminion" target="_blank" rel="noopener noreferrer" 
+                       class="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out border border-gray-600 hover:border-blue-500">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        <span class="font-medium">Follow @printminion</span>
+                    </a>
+                    
+                    <!-- Cults3D -->
+                    <a href="https://cults3d.com/@printminion" target="_blank" rel="noopener noreferrer" 
+                       class="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out border border-gray-600 hover:border-green-500">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 2L2 7v10c0 5.52 3.82 10.66 10 12 6.18-1.34 10-6.48 10-12V7l-10-5zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-13v6l5 3 1-1.5-4-2.5V7z"/>
+                        </svg>
+                        <span class="font-medium">3D Enclosures</span>
+                    </a>
+                    
+                    <!-- Buy Me a Coffee -->
+                    <a href="https://buymeacoffee.com/printminion" target="_blank" rel="noopener noreferrer" 
+                       class="inline-flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out font-bold shadow-lg">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M20.216 6.415l-.132-.666c-.119-.598-.388-1.163-1.001-1.379-.197-.069-.42-.098-.57-.241-.152-.143-.196-.366-.231-.572-.065-.378-.125-.756-.192-1.133-.057-.325-.102-.69-.25-.987-.195-.4-.597-.634-.996-.788a5.723 5.723 0 00-.626-.194c-1-.263-2.05-.36-3.077-.416a25.834 25.834 0 00-3.7.062c-.915.083-1.88.184-2.75.5-.318.116-.646.256-.888.501-.297.302-.393.77-.177 1.146.154.267.415.456.692.58.36.162.737.284 1.123.366 1.075.238 2.189.331 3.287.37 1.218.05 2.437.01 3.65-.118.299-.033.598-.073.896-.119.352-.054.578-.513.474-.834-.124-.383-.457-.531-.834-.473-.466.074-.96.108-1.382.146-1.177.08-2.358.082-3.536.006a22.228 22.228 0 01-1.157-.107c-.086-.01-.18-.025-.258-.036-.243-.036-.484-.08-.724-.13-.111-.027-.111-.185 0-.212h.005c.277-.06.557-.108.838-.147h.002c.131-.009.263-.032.394-.048a25.076 25.076 0 013.426-.12c.674.019 1.347.067 2.017.144l.228.031c.267.04.533.088.798.145.392.085.895.113 1.07.542.055.137.08.288.111.431l.319 1.484a.237.237 0 01-.199.284h-.003c-.037.006-.075.01-.112.015a36.704 36.704 0 01-4.743.295 37.059 37.059 0 01-4.699-.304c-.14-.017-.293-.042-.417-.06-.326-.048-.649-.108-.973-.161-.393-.065-.768-.032-1.123.161-.29.16-.527.404-.675.701-.154.316-.199.66-.267 1-.069.34-.176.707-.135 1.056.087.753.613 1.365 1.37 1.502a39.69 39.69 0 0011.343.376.483.483 0 01.535.53l-.071.697-1.018 9.907c-.041.41-.047.832-.125 1.237-.122.637-.553 1.028-1.182 1.171-.577.131-1.165.2-1.756.205-.656.004-1.31-.025-1.966-.022-.699.004-1.556-.06-2.095-.58-.475-.458-.54-1.174-.605-1.793l-.731-7.013-.322-3.094c-.037-.351-.286-.695-.678-.678-.336.015-.718.3-.678.679l.228 2.185.949 9.112c.147 1.344 1.174 2.068 2.446 2.272.742.12 1.503.144 2.257.156.966.016 1.942.053 2.892-.122 1.408-.258 2.465-1.198 2.616-2.657.34-3.332.683-6.663 1.024-9.995l.215-2.087a.484.484 0 01.39-.426c.402-.078.787-.212 1.074-.518.455-.488.546-1.124.385-1.766zm-1.478.772c-.145.137-.363.201-.578.233-2.416.359-4.866.54-7.308.46-1.748-.06-3.477-.254-5.207-.498-.17-.024-.353-.055-.47-.18-.22-.236-.111-.71-.054-.995.052-.26.152-.609.463-.646.484-.057 1.046.148 1.526.22.577.088 1.156.159 1.737.212 2.48.226 5.002.19 7.472-.14.45-.06.899-.13 1.345-.21.399-.072.84-.206 1.08.206.166.281.188.657.162.974a.544.544 0 01-.169.364z"/>
+                        </svg>
+                        <span class="font-medium">Buy Me a Coffee</span>
+                    </a>
+                </div>
+            </div>
+            <div class="text-center text-xs text-gray-500 mt-4">
+                <p>Check out my custom 3D printed enclosures for DIY display modules on Cults3D!</p>
+            </div>
+        </footer>
+
+        <!-- Calibration Wizard Modal -->
+        <div id="calibration-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+            <div class="bg-gray-800 rounded-lg shadow-xl p-6 max-w-2xl w-full mx-4 border-2 border-green-500">
+                <h2 class="text-2xl font-bold text-white mb-4">🎯 Gyroscope Calibration Wizard</h2>
+                
+                <div id="calibration-step-1" class="calibration-step">
+                    <p class="text-gray-300 mb-4">This wizard will help you calibrate the gyroscope for accurate rotation tracking.</p>
+                    <p class="text-yellow-300 mb-4 font-semibold">Instructions:</p>
+                    <ul class="text-gray-300 mb-6 list-disc list-inside space-y-2">
+                        <li>Hold the toothbrush <strong>vertically upright</strong> (standing position)</li>
+                        <li>When prompted, rotate it <strong>clockwise 360°</strong> around its length</li>
+                        <li>Try to rotate at a <strong>steady speed</strong> (about 2-3 seconds per rotation)</li>
+                        <li>Click "Stop" when you complete the rotation</li>
+                        <li>We'll do 3 test rotations to calculate the perfect scale</li>
+                    </ul>
+                    <button id="calibration-start-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg">
+                        Start Calibration
+                    </button>
+                    <button id="calibration-cancel-button" class="ml-4 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg">
+                        Cancel
+                    </button>
+                </div>
+
+                <div id="calibration-step-2" class="calibration-step hidden">
+                    <div class="bg-blue-900/50 border-2 border-blue-500 rounded-lg p-6 mb-6">
+                        <h3 class="text-xl font-bold text-blue-300 mb-3">Test #<span id="calibration-test-number">1</span> of 3</h3>
+                        <p class="text-white text-lg mb-4" id="calibration-instruction">Hold the brush vertically and click "Start Rotating"</p>
+                        <div class="text-center">
+                            <div class="text-6xl mb-4" id="calibration-icon">🦷</div>
+                            <div class="text-3xl font-bold text-yellow-300 mb-2" id="calibration-status">Ready</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-gray-900/50 rounded-lg p-4">
+                            <div class="text-sm text-gray-400">Gyro Z Accumulated</div>
+                            <div class="text-2xl font-bold text-white" id="calibration-gyro-accumulated">0</div>
+                        </div>
+                        <div class="bg-gray-900/50 rounded-lg p-4">
+                            <div class="text-sm text-gray-400">Time Elapsed</div>
+                            <div class="text-2xl font-bold text-white" id="calibration-time-elapsed">0.0s</div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <button id="calibration-rotate-button" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg">
+                            ▶️ Start Rotating
+                        </button>
+                        <button id="calibration-stop-button" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg hidden">
+                            ⏹️ Stop (Rotation Complete)
+                        </button>
+                        <button id="calibration-cancel-button-2" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <div id="calibration-step-3" class="calibration-step hidden">
+                    <div class="bg-green-900/50 border-2 border-green-500 rounded-lg p-6 mb-6">
+                        <h3 class="text-xl font-bold text-green-300 mb-3">✅ Calibration Complete!</h3>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <div class="text-sm text-gray-400">Test Results:</div>
+                                <div id="calibration-results" class="text-white text-sm mt-2 space-y-1"></div>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-400">Calculated Scale:</div>
+                                <div class="text-3xl font-bold text-green-300 mt-2" id="calibration-calculated-scale">0.000</div>
+                                <div class="text-xs text-gray-400 mt-1">Average from all tests</div>
+                            </div>
+                        </div>
+                        <p class="text-gray-300 mb-4">Would you like to apply this calibration?</p>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <button id="calibration-apply-button" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg">
+                            ✅ Apply Calibration
+                        </button>
+                        <button id="calibration-retry-button" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg">
+                            🔄 Retry Calibration
+                        </button>
+                        <button id="calibration-close-button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div> <!-- /Max-width container -->
+
+
+    <!-- Main Application Logic -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        /*
+         * ═══════════════════════════════════════════════════════════════
+         * SONICARE WEB BLUETOOTH DASHBOARD
+         * ═══════════════════════════════════════════════════════════════
+         *
+         * CODE ORGANIZATION:
+         *
+         * 1. BLUETOOTH CONFIGURATION - BLE.SERVICES & BLE.CHARS objects
+         * 2. DATA MAPS & LOOKUP TABLES - DATA_MAPS object for value mappings
+         * 3. SENSOR & VISUALIZATION CONFIG - CONFIG object for all settings
+         * 4. GLOBAL STATE - Application state variables
+         * 5. DOM REFERENCES - UI element references
+         * 6. UTILITY FUNCTIONS - Helper functions (log, sleep, status updates)
+         * 7. 3D VISUALIZATION FUNCTIONS - Three.js related functions
+         * 8. BLUETOOTH FUNCTIONS - Connection, data reading, notifications
+         * 9. DATA UPDATE FUNCTIONS - UI update handlers
+         * 10. SENSOR DATA PROCESSING - Gyro/Accel data handling
+         * 11. INITIALIZATION - Event listeners and setup
+         *
+         * ═══════════════════════════════════════════════════════════════
+         */
+
+        // ═══════════════════════════════════════════════════════════════
+        // BLUETOOTH CONFIGURATION
+        // ═══════════════════════════════════════════════════════════════
+
+        const SONICARE_BASE_UUID = "477ea600-a260-11e4-ae37-0002a5d5";
+
+        const BLE = {
+            SERVICES: {
+                HANDLE:       `${SONICARE_BASE_UUID}0001`,
+                BRUSHING:     `${SONICARE_BASE_UUID}0002`,
+                ORIENTATION:  `${SONICARE_BASE_UUID}0005`,
+                BRUSH:        `${SONICARE_BASE_UUID}0006`,
+                DIAGNOSTIC:   `${SONICARE_BASE_UUID}0007`,
+                BATTERY:      0x180f, // Standard Battery Service
+                DEVICE_INFO:  0x180a, // Standard Device Information Service
+            },
+            CHARS: {
+                // Battery & Handle
+                BATTERY_LEVEL:    0x2a19,
+                HANDLE_STATE:     `${SONICARE_BASE_UUID}4010`,
+                HANDLE_TIME:      `${SONICARE_BASE_UUID}4050`,
+                ROUTINE_ID:       `${SONICARE_BASE_UUID}4022`,
+                MOTOR_RUNTIME:    `${SONICARE_BASE_UUID}4040`,
+                AVAILABLE_ROUTINES: `${SONICARE_BASE_UUID}4020`,
+                // Brushing/Routine Service
+                MODE:             `${SONICARE_BASE_UUID}4080`,
+                SESSION_STATE:    `${SONICARE_BASE_UUID}4082`,
+                SESSION_ID:       `${SONICARE_BASE_UUID}40b0`,
+                ACTIVE_TIME:      `${SONICARE_BASE_UUID}4090`,
+                STRENGTH:         `${SONICARE_BASE_UUID}40b0`,
+                ROUTINE_NUMBER:   `${SONICARE_BASE_UUID}4091`,
+                ROUTINE_LENGTH:   `${SONICARE_BASE_UUID}4070`,
+                // Orientation/Sensors
+                ORIENTATION_CONFIG: `${SONICARE_BASE_UUID}4120`,
+                GYRO_DATA:        `${SONICARE_BASE_UUID}4130`,
+                ORIENTATION_CTRL: `${SONICARE_BASE_UUID}4140`,
+                // Brush Head (Service 6)
+                BRUSH_SERIAL:     `${SONICARE_BASE_UUID}4230`,
+                BRUSH_USAGE:      `${SONICARE_BASE_UUID}4290`,
+                BRUSH_TYPE:       `${SONICARE_BASE_UUID}42a0`,
+                NFC_TAG_VERSION:  `${SONICARE_BASE_UUID}4210`,
+                FACTORY_MODE:     `${SONICARE_BASE_UUID}4220`,
+                LIFETIME_LIMIT:   `${SONICARE_BASE_UUID}4280`,
+                BRUSH_HEAD_4270:  `${SONICARE_BASE_UUID}4270`,
+                BRUSH_HEAD_4280:  `${SONICARE_BASE_UUID}4280`,
+                BRUSH_HEAD_42A2:  `${SONICARE_BASE_UUID}42a2`,
+                BRUSH_HEAD_42A4:  `${SONICARE_BASE_UUID}42a4`,
+                BRUSH_HEAD_42A6:  `${SONICARE_BASE_UUID}42a6`,
+                BRUSH_HEAD_NFC_URL: `${SONICARE_BASE_UUID}42b0`,
+                BRUSH_HEAD_42C0:  `${SONICARE_BASE_UUID}42c0`,
+                // Diagnostic Service (Service 7)
+                ERROR_PERSISTENT: `${SONICARE_BASE_UUID}4310`,
+                ERROR_VOLATILE:   `${SONICARE_BASE_UUID}4320`,
+                PROXIMITY_VALUE:  `${SONICARE_BASE_UUID}4330`,
+                EXTERNAL_FLASH:   `${SONICARE_BASE_UUID}4340`,
+                PRESSURE_SENSOR:  `${SONICARE_BASE_UUID}4350`,
+                INVALID_CHARGER_COUNT: `${SONICARE_BASE_UUID}4360`,
+                DEBUG_INFO:       `${SONICARE_BASE_UUID}4370`,
+                // Device Information (Standard BLE)
+                MANUFACTURER_NAME: 0x2a29,
+                MODEL_NUMBER:      0x2a24,
+                SERIAL_NUMBER:     0x2a25,
+                HARDWARE_REV:      0x2a27,
+                FIRMWARE_REV:      0x2a26,
+                SOFTWARE_REV:      0x2a28,
+                SYSTEM_ID:         0x2a23,
+                IEEE_REGULATORY:   0x2a2a,
+                PNP_ID:            0x2a50,
+            },
+        };
+
+        // ═══════════════════════════════════════════════════════════════
+        // DATA MAPS & LOOKUP TABLES
+        // ═══════════════════════════════════════════════════════════════
+
+        const DATA_MAPS = {
+            HANDLE_STATE: {
+                0: 'Off', 1: 'Standby', 2: 'Run', 3: 'Charge', 4: 'Shutdown',
+                6: 'Validate', 7: 'LightsOut',
+            },
+            BRUSHING_MODE: {
+                0x00: 'Clean', 0x01: 'White+', 0x02: 'Gum Health', 0x03: 'Deep Clean+',
+                0x78: 'Clean (Alt)', 0xa0: 'White+ (Alt)', 0xb4: 'Deep Clean+ (Alt)', 0xc8: 'Gum Health (Alt)',
+            },
+            SESSION_STATE: { 0: 'Ready', 1: 'Active', 2: 'Resume' },
+            BRUSH_TYPE: { 0: 'None', 1: 'Adaptive Clean', 2: 'Adaptive White', 3: 'Tongue Care', 4: 'Adaptive Gums' },
+            STRENGTH: { 0: 'Low', 1: 'Medium', 2: 'High' },
+        };
+
+        // ═══════════════════════════════════════════════════════════════
+        // SENSOR & VISUALIZATION CONFIGURATION
+        // ═══════════════════════════════════════════════════════════════
+        //
+        // PERFORMANCE OPTIMIZATIONS:
+        // • DOM element caching - reuse references instead of repeated getElementById()
+        // • Throttled UI updates - limit updates to 50-200ms intervals
+        // • Throttled chart updates - 100ms with animation disabled
+        // • Object reuse - cache Three.js quaternions/vectors to reduce GC pressure
+        // • Frame limiting - target 60 FPS for animation loop
+        // • Lazy matrix updates - mark dirty instead of forcing immediate recalculation
+        // ═══════════════════════════════════════════════════════════════
+
+        const CONFIG = {
+            // Sensor calibration
+            ACCEL_SCALE: 1.0 / 4096.0,  // ±4g range (4096 LSB/g)
+            GYRO_SCALE: 0.013737,       // Gyroscope scale factor (rad/s per LSB) - calibrated via wizard
+            GYRO_DEADBAND: 50,          // Ignore gyro below threshold (reduces drift)
+            SMOOTHING: 0.8,             // Rotation speed smoothing (0-1)
+
+            // Connection settings
+            MAX_RETRIES: 5,
+            TIMEOUT_MS: 20000,          // 20s per connection attempt
+            RETRY_BACKOFF_MS: 500,
+            MAX_BACKOFF_MS: 2000,
+
+            // Chart & logging
+            MAX_CHART_POINTS: 100,
+            LOG_INTERVAL_MS: 2000,      // Log sensor data every 2s
+        };
+
+        // ═══════════════════════════════════════════════════════════════
+        // GLOBAL STATE
+        // ═══════════════════════════════════════════════════════════════
+
+        let device = null;
+        let server = null;
+        let sensorChart = null;
+        let scene, camera, renderer, controls, toothbrushMesh;
+        let lastTimestamp = 0;
+        let lastRotationSpeed = 0;
+        let brushRotationZ = 0; // Cumulative rotation around brush axis (radians)
+
+        // Calibration wizard state
+        let calibrationState = {
+            active: false,
+            measuring: false,
+            testNumber: 0,
+            startTime: 0,
+            gyroAccumulated: 0,
+            measurements: [], // {test, gyroSum, timeElapsed, calculatedScale}
+        };
+        let lastAccX = 0, lastAccY = -4096, lastAccZ = 0; // Last known accelerometer values (default: upright position)
+
+        // ═══════════════════════════════════════════════════════════════
+        // DOM REFERENCES
+        // ═══════════════════════════════════════════════════════════════
+
+        const connectButton = document.getElementById('connect-button');
+        const statusMessage = document.getElementById('status-message');
+        const statusAlert = document.getElementById('status-alert');
+        const connectionProgress = document.getElementById('connection-progress');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const countdownTimer = document.getElementById('countdown-timer');
+
+        const ui = {
+            battery: document.getElementById('data-battery'),
+            handleState: document.getElementById('data-handle-state'),
+            handleTime: document.getElementById('data-handle-time'),
+            routineId: document.getElementById('data-routine-id'),
+            motorRuntime: document.getElementById('data-motor-runtime'),
+            mode: document.getElementById('data-mode'),
+            sessionState: document.getElementById('data-session-state'),
+            brushSerial: document.getElementById('data-brush-serial'),
+            nfcTagVersion: document.getElementById('data-nfc-tag-version'),
+            factoryMode: document.getElementById('data-factory-mode'),
+            lifetimeLimit: document.getElementById('data-lifetime-limit'),
+            brushUsage: document.getElementById('data-brush-usage'),
+            sessionId: document.getElementById('data-session-id'),
+            routineNumber: document.getElementById('data-routine-number'),
+            routineLength: document.getElementById('data-routine-length'),
+            activeTime: document.getElementById('data-active-time'),
+            strength: document.getElementById('data-strength'),
+            brushType: document.getElementById('data-brush-type'),
+            pitch: document.getElementById('pitch-value'),
+            roll: document.getElementById('roll-value'),
+            yaw: document.getElementById('yaw-value'),
+            rotationSpeed: document.getElementById('rotation-speed'),
+            manufacturer: document.getElementById('data-manufacturer'),
+            model: document.getElementById('data-model'),
+            deviceSerial: document.getElementById('data-device-serial'),
+            firmware: document.getElementById('data-firmware'),
+            hardware: document.getElementById('data-hardware'),
+            software: document.getElementById('data-software'),
+            sensorConfig: document.getElementById('data-sensor-config'),
+            systemId: document.getElementById('data-system-id'),
+            ieeeRegulatory: document.getElementById('data-ieee-regulatory'),
+            pnpId: document.getElementById('data-pnp-id'),
+            brushHead4270: document.getElementById('data-brush-head-4270'),
+            brushHead4280: document.getElementById('data-brush-head-4280'),
+            brushHead42A2: document.getElementById('data-brush-head-42a2'),
+            brushHead42A4: document.getElementById('data-brush-head-42a4'),
+            brushHead42A6: document.getElementById('data-brush-head-42a6'),
+            brushHeadNfcUrl: document.getElementById('data-brush-head-nfc-url'),
+            brushHead42C0: document.getElementById('data-brush-head-42c0'),
+            errorPersistent: document.getElementById('data-error-persistent'),
+            errorVolatile: document.getElementById('data-error-volatile'),
+            proximityValue: document.getElementById('data-proximity-value'),
+            pressureSensor: document.getElementById('data-pressure-sensor'),
+            invalidChargerCount: document.getElementById('data-invalid-charger-count'),
+            debugInfo: document.getElementById('data-debug-info'),
+        };
+
+        // ═══════════════════════════════════════════════════════════════
+        // UTILITY FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════
+
+        /**
+         * Log message to console and update status text
+         */
+        function log(message) {
+            console.log(message);
+            statusMessage.textContent = `Status: ${message}`;
+        }
+
+        /**
+         * Update connection progress bar
+         */
+        function updateProgress(percent, text) {
+            progressBar.style.width = `${percent}%`;
+            progressText.textContent = text;
+        }
+
+        /**
+         * Set status alert to success style
+         */
+        function setStatusSuccess(message) {
+            log(message);
+            statusAlert.className = 'bg-green-900/50 border border-green-700 text-green-200 px-4 py-3 rounded-lg relative mb-6';
+        }
+
+        /**
+         * Set status alert to warning style
+         */
+        function setStatusWarning(message) {
+            log(message);
+            statusAlert.className = 'bg-yellow-900/50 border border-yellow-700 text-yellow-200 px-4 py-3 rounded-lg relative mb-6';
+        }
+
+        /**
+         * Set status alert to error style
+         */
+        function setStatusError(message) {
+            log(message);
+            statusAlert.className = 'bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded-lg relative mb-6';
+        }
+
+        /**
+         * Sleep/delay for specified milliseconds
+         */
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        /**
+         * Format seconds into human-readable duration
+         * @param {number} seconds - Total seconds
+         * @returns {string} Formatted string (e.g., "2h 5m" or "45s")
+         */
+        function formatDuration(seconds) {
+            if (seconds < 60) {
+                return `${seconds}s`;
+            } else if (seconds < 3600) {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+            } else {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const remainingSeconds = seconds % 60;
+                
+                if (minutes === 0 && remainingSeconds === 0) {
+                    return `${hours}h`;
+                } else if (remainingSeconds === 0) {
+                    return `${hours}h ${minutes}m`;
+                } else if (minutes === 0) {
+                    return `${hours}h ${remainingSeconds}s`;
+                } else {
+                    return `${hours}h ${minutes}m ${remainingSeconds}s`;
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 3D VISUALIZATION FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════
+
+        /**
+         * Update the cumulative brush rotation angle (yaw)
+         * Note: Actual 3D rotation is applied in updateBrushOrientation() to combine with pitch/roll
+         * @param {number} angleDelta - Rotation angle in radians (positive = clockwise looking down from brush head)
+         * @param {string} [source='manual'] - Source of rotation ('manual', 'gyro') for logging
+         */
+        function rotateBrushAroundAxis(angleDelta, source = 'manual') {
+            if (!toothbrushMesh) {
+                console.warn('⚠️ Cannot rotate: toothbrushMesh not initialized');
+                return;
+            }
+
+            // Update cumulative rotation tracker (this will be applied in updateBrushOrientation)
+            brushRotationZ += angleDelta;
+
+            // Calculate degrees and normalize to 0-360 range for display
+            let totalDegrees = (brushRotationZ * 180 / Math.PI) % 360;
+            if (totalDegrees < 0) totalDegrees += 360; // Handle negative angles
+            
+            // Throttle UI updates - cache elements and only update every 50ms
+            const now = Date.now();
+            if (!window.lastUIUpdate || (now - window.lastUIUpdate) > 50) {
+                // Update UI - text display
+                ui.yaw.textContent = totalDegrees.toFixed(1) + '°';
+                
+                // Update circular rotation indicator (cache elements)
+                if (!window.rotationIndicatorCache) {
+                    window.rotationIndicatorCache = document.getElementById('rotation-indicator');
+                    window.yawDegreesDisplayCache = document.getElementById('yaw-degrees-display');
+                }
+                
+                if (window.rotationIndicatorCache) {
+                    window.rotationIndicatorCache.setAttribute('transform', `rotate(${totalDegrees}, 50, 50)`);
+                }
+                if (window.yawDegreesDisplayCache) {
+                    window.yawDegreesDisplayCache.textContent = totalDegrees.toFixed(0);
+                }
+                
+                window.lastUIUpdate = now;
+            }
+
+            // Log rotation (with throttling for gyro updates)
+            if (source === 'manual' || !window.lastRotationLog || (Date.now() - window.lastRotationLog) > 2000) {
+                window.lastRotationLog = Date.now();
+                const degrees = (angleDelta * 180 / Math.PI).toFixed(2);
+                const totalDegrees = (brushRotationZ * 180 / Math.PI).toFixed(1);
+                console.log(`🔄 Brush rotation [${source}]: Δ=${degrees}°, total=${totalDegrees}° (${brushRotationZ.toFixed(3)} rad)`);
+            }
+        }
+
+        /**
+         * Calculate pitch and roll from accelerometer data
+         * SENSOR ORIENTATION:
+         * - Sensor Y-axis = brush length (vertical when standing)
+         * - When vertical: accY ≈ ±1g (pointing up or down)
+         *
+         * WORLD COORDINATE MAPPING:
+         * - World Z-axis (green) = UP
+         * - We want brush aligned with World Z when vertical
+         *
+         * @param {number} accX - Accelerometer X (in g units) - sensor X
+         * @param {number} accY - Accelerometer Y (in g units) - sensor Y (brush length)
+         * @param {number} accZ - Accelerometer Z (in g units) - sensor Z
+         * @returns {Object} {pitch, roll} in radians
+         */
+        function calculatePitchRoll(accX, accY, accZ) {
+            // COORDINATE SYSTEM:
+            // - Sensor Y-axis = brush length (≈-1g when vertical/upright)
+            // - World Z-axis = vertical (up)
+            // - When brush is upright: accY ≈ -1g, accX ≈ 0, accZ ≈ 0
+
+            // Map sensor coordinate to world coordinate:
+            // Sensor Y → World Z (brush length points up when vertical)
+            // Sensor X → World X (left/right)
+            // Sensor Z → World Y (forward/back)
+            
+            // When vertical: accY=-1g should map to world +Z
+            // So we negate accY to get world Z component
+            const worldZ = -accY;  // Vertical component
+            const worldX = accX;    // Left/right tilt
+            const worldY = accZ;    // Forward/back tilt
+            
+            // Pitch: rotation around world X-axis (forward/backward tilt)
+            // atan2(horizontal_component, vertical_component)
+            const pitch = Math.atan2(worldY, worldZ);
+
+            // Roll: rotation around world Y-axis (left/right tilt)
+            const roll = Math.atan2(worldX, worldZ);
+            
+            return { pitch, roll };
+        }
+
+        /**
+         * Process gyroscope rotation data and update toothbrush Z-axis rotation
+         * @param {number} gyroZ - Gyroscope Z-axis raw value
+         * @param {number} deltaTime - Time elapsed since last update (seconds)
+         */
+        function processGyroscopeRotation(gyroZ, deltaTime) {
+            // If calibration is active and measuring, accumulate raw gyro values
+            if (calibrationState.measuring) {
+                calibrationState.gyroAccumulated += Math.abs(gyroZ) * deltaTime;
+                
+                // Update UI (throttled to every 50ms for calibration display)
+                const now = Date.now();
+                if (!window.lastCalibrationUpdate || (now - window.lastCalibrationUpdate) > 50) {
+                    const timeElapsed = (now - calibrationState.startTime) / 1000;
+                    
+                    // Cache calibration UI elements
+                    if (!window.calibrationUICache) {
+                        window.calibrationUICache = {
+                            gyroAccum: document.getElementById('calibration-gyro-accumulated'),
+                            timeElapsed: document.getElementById('calibration-time-elapsed'),
+                        };
+                    }
+                    
+                    if (window.calibrationUICache.gyroAccum) {
+                        window.calibrationUICache.gyroAccum.textContent = calibrationState.gyroAccumulated.toFixed(0);
+                    }
+                    if (window.calibrationUICache.timeElapsed) {
+                        window.calibrationUICache.timeElapsed.textContent = timeElapsed.toFixed(1) + 's';
+                    }
+                    
+                    window.lastCalibrationUpdate = now;
+                }
+                
+                return; // Don't apply rotation during calibration
+            }
+
+            // Apply deadband to reduce drift from noise
+            if (Math.abs(gyroZ) < CONFIG.GYRO_DEADBAND) {
+                return;
+            }
+
+            // Calculate rotation angle (negate to match visual rotation direction)
+            const spinDelta = -gyroZ * CONFIG.GYRO_SCALE * deltaTime;
+
+            // Apply rotation around brush's LOCAL Y-axis
+            rotateBrushAroundAxis(spinDelta, 'gyro');
+
+            // Update rotation speed display (exponential smoothing for display only)
+            // Throttle to every 100ms
+            const now = Date.now();
+            if (!window.lastSpeedUpdate || (now - window.lastSpeedUpdate) > 100) {
+                const rotationSpeedRaw = Math.abs(gyroZ) * 0.1; // Approximate deg/s
+                lastRotationSpeed = (CONFIG.SMOOTHING * lastRotationSpeed) + ((1 - CONFIG.SMOOTHING) * rotationSpeedRaw);
+                ui.rotationSpeed.textContent = Math.round(lastRotationSpeed);
+                window.lastSpeedUpdate = now;
+            }
+        }
+
+        /**
+         * Update 3D model orientation from accelerometer
+         * Uses unit vector quaternion approach (proven working in 50743a4a)
+         * IMPORTANT: This sets the base orientation (pitch/roll) without affecting spin (yaw)
+         *
+         * @param {number} accX - Accelerometer X (in g units)
+         * @param {number} accY - Accelerometer Y (in g units)
+         * @param {number} accZ - Accelerometer Z (in g units)
+         */
+        function updateBrushOrientation(accX, accY, accZ) {
+            if (!toothbrushMesh) return;
+
+            // Calculate gravity magnitude for normalization
+            const gravMag = Math.sqrt(accX * accX + accY * accY + accZ * accZ);
+            if (gravMag < 0.1) return; // Skip if no significant acceleration
+
+            // Normalize accelerometer values (gravity vector points DOWN)
+            const gravX = accX / gravMag;
+            const gravY = accY / gravMag;
+            const gravZ = accZ / gravMag;
+
+            // Create UP vector (opposite of gravity)
+            // When brush stands vertical: accY ≈ -1g, so UP = -gravity = +Y
+            const upX = -gravX;
+            const upY = -gravY;
+            const upZ = -gravZ;
+
+            // Map accelerometer to target direction in Three.js world space
+            // Sensor Y (brush length) should point opposite to gravity (UP in world)
+            // Three.js: Y=depth, Z=up
+            // When vertical: accY≈-1g → targetZ=+1 (pointing up along world Z)
+            const targetX = upX;   // Maps to world X (left/right)
+            const targetY = -upZ;  // Maps to world Y (forward/back) - NOTE: sensor Z → world Y - NEGATED to match visual rotation
+            const targetZ = upY;   // Maps to world Z (up) - NOTE: sensor Y → world Z
+            
+            // Reuse quaternion objects to reduce garbage collection
+            if (!window.quaternionCache) {
+                window.quaternionCache = {
+                    brushLocalY: new THREE.Vector3(0, 1, 0),
+                    targetDirection: new THREE.Vector3(),
+                    spinAxis: new THREE.Vector3(0, 1, 0),
+                    qOrientation: new THREE.Quaternion(),
+                    qSpin: new THREE.Quaternion(),
+                    qFinal: new THREE.Quaternion(),
+                };
+            }
+            
+            const cache = window.quaternionCache;
+            
+            // Update target direction
+            cache.targetDirection.set(targetX, targetY, targetZ);
+            
+            // Create quaternion to align cylinder's Y-axis with target direction
+            cache.qOrientation.setFromUnitVectors(cache.brushLocalY, cache.targetDirection);
+
+            // Combine orientation quaternion with spin rotation
+            cache.qSpin.setFromAxisAngle(cache.spinAxis, brushRotationZ);
+
+            // Apply orientation first, then spin around the oriented Y-axis
+            cache.qFinal.multiplyQuaternions(cache.qOrientation, cache.qSpin);
+            
+            // Apply combined rotation
+            toothbrushMesh.quaternion.copy(cache.qFinal);
+            
+            // Matrix updates are automatically handled by Three.js renderer
+            // No need to force update every frame - only mark as needing update
+            toothbrushMesh.matrixWorldNeedsUpdate = true;
+
+            // Throttle pitch/roll UI updates (already have orientation data)
+            const now = Date.now();
+            if (!window.lastPitchRollUpdate || (now - window.lastPitchRollUpdate) > 100) {
+                const pitch = Math.atan2(upX, upY);
+                const roll = Math.atan2(upZ, upY);
+                ui.pitch.textContent = (pitch * 180 / Math.PI).toFixed(1) + '°';
+                ui.roll.textContent = (roll * 180 / Math.PI).toFixed(1) + '°';
+                window.lastPitchRollUpdate = now;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // INITIALIZATION & EVENT LISTENERS
+        // ═══════════════════════════════════════════════════════════════
+
+        // Connect button
+        connectButton.addEventListener('click', connectDevice);
+
+        // Reset yaw (Z-axis rotation) button
+        document.getElementById('reset-yaw-button').addEventListener('click', () => {
+            brushRotationZ = 0;
+            // Apply the reset to the 3D model
+            updateBrushOrientation(lastAccX * CONFIG.ACCEL_SCALE, lastAccY * CONFIG.ACCEL_SCALE, lastAccZ * CONFIG.ACCEL_SCALE);
+            log('Yaw reset to 0°');
+        });
+
+        // Manual rotation test buttons (for debugging)
+        document.getElementById('rotate-left-button').addEventListener('click', () => {
+            rotateBrushAroundAxis(-Math.PI / 6, 'manual-left'); // -30 degrees (counter-clockwise)
+            // Apply rotation to 3D model using last known accelerometer values
+            updateBrushOrientation(lastAccX * CONFIG.ACCEL_SCALE, lastAccY * CONFIG.ACCEL_SCALE, lastAccZ * CONFIG.ACCEL_SCALE);
+            console.log('🔄 Manual rotate left: Applied rotation to 3D model');
+        });
+
+        document.getElementById('rotate-right-button').addEventListener('click', () => {
+            rotateBrushAroundAxis(Math.PI / 6, 'manual-right'); // +30 degrees (clockwise)
+            // Apply rotation to 3D model using last known accelerometer values
+            updateBrushOrientation(lastAccX * CONFIG.ACCEL_SCALE, lastAccY * CONFIG.ACCEL_SCALE, lastAccZ * CONFIG.ACCEL_SCALE);
+            console.log('🔄 Manual rotate right: Applied rotation to 3D model');
+        });
+
+        // Debug packet dump button
+        document.getElementById('debug-packets-button').addEventListener('click', () => {
+            window.debugNextPacket = true;
+            log('🔍 Debug mode enabled - will dump next packet in detail');
+        });
+
+        // Coordinate debug toggle button
+        document.getElementById('coordinate-toggle').addEventListener('click', () => {
+            const content = document.getElementById('coordinate-content');
+            const icon = document.getElementById('coordinate-toggle-icon');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.textContent = '▼';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▶';
+            }
+        });
+
+        // ═══════════════════════════════════════════════════════════════
+        // CALIBRATION WIZARD
+        // ═══════════════════════════════════════════════════════════════
+
+        document.getElementById('calibration-wizard-button').addEventListener('click', openCalibrationWizard);
+
+        function openCalibrationWizard() {
+            document.getElementById('calibration-modal').classList.remove('hidden');
+            document.getElementById('calibration-step-1').classList.remove('hidden');
+            document.getElementById('calibration-step-2').classList.add('hidden');
+            document.getElementById('calibration-step-3').classList.add('hidden');
+            
+            calibrationState = {
+                active: true,
+                measuring: false,
+                testNumber: 0,
+                startTime: 0,
+                gyroAccumulated: 0,
+                measurements: [],
+            };
+        }
+
+        function closeCalibrationWizard() {
+            document.getElementById('calibration-modal').classList.add('hidden');
+            calibrationState.active = false;
+            calibrationState.measuring = false;
+        }
+
+        document.getElementById('calibration-start-button').addEventListener('click', () => {
+            document.getElementById('calibration-step-1').classList.add('hidden');
+            document.getElementById('calibration-step-2').classList.remove('hidden');
+            startCalibrationTest();
+        });
+
+        document.getElementById('calibration-cancel-button').addEventListener('click', closeCalibrationWizard);
+        document.getElementById('calibration-cancel-button-2').addEventListener('click', closeCalibrationWizard);
+
+        document.getElementById('calibration-rotate-button').addEventListener('click', () => {
+            calibrationState.measuring = true;
+            calibrationState.startTime = Date.now();
+            calibrationState.gyroAccumulated = 0;
+            
+            document.getElementById('calibration-rotate-button').classList.add('hidden');
+            document.getElementById('calibration-stop-button').classList.remove('hidden');
+            document.getElementById('calibration-status').textContent = 'Rotating...';
+            document.getElementById('calibration-icon').textContent = '🔄';
+            document.getElementById('calibration-instruction').textContent = 'Rotate the brush 360° clockwise, then click "Stop"';
+            
+            log('🎯 Calibration test #' + (calibrationState.testNumber + 1) + ' started');
+        });
+
+        document.getElementById('calibration-stop-button').addEventListener('click', () => {
+            calibrationState.measuring = false;
+            const timeElapsed = (Date.now() - calibrationState.startTime) / 1000;
+            
+            // Calculate scale: 360° (2π radians) divided by accumulated gyro readings
+            const targetRotation = 2 * Math.PI; // 360 degrees in radians
+            const calculatedScale = targetRotation / calibrationState.gyroAccumulated;
+            
+            calibrationState.measurements.push({
+                test: calibrationState.testNumber + 1,
+                gyroSum: calibrationState.gyroAccumulated,
+                timeElapsed: timeElapsed,
+                calculatedScale: calculatedScale,
+            });
+            
+            log(`✅ Test #${calibrationState.testNumber + 1}: gyroSum=${calibrationState.gyroAccumulated.toFixed(0)}, time=${timeElapsed.toFixed(1)}s, scale=${calculatedScale.toFixed(6)}`);
+            
+            calibrationState.testNumber++;
+            
+            if (calibrationState.testNumber >= 3) {
+                // All tests complete, show results
+                showCalibrationResults();
+            } else {
+                // Next test
+                startCalibrationTest();
+            }
+        });
+
+        function startCalibrationTest() {
+            document.getElementById('calibration-test-number').textContent = calibrationState.testNumber + 1;
+            document.getElementById('calibration-rotate-button').classList.remove('hidden');
+            document.getElementById('calibration-stop-button').classList.add('hidden');
+            document.getElementById('calibration-status').textContent = 'Ready';
+            document.getElementById('calibration-icon').textContent = '🦷';
+            document.getElementById('calibration-instruction').textContent = 'Hold the brush vertically and click "Start Rotating"';
+            document.getElementById('calibration-gyro-accumulated').textContent = '0';
+            document.getElementById('calibration-time-elapsed').textContent = '0.0s';
+        }
+
+        function showCalibrationResults() {
+            document.getElementById('calibration-step-2').classList.add('hidden');
+            document.getElementById('calibration-step-3').classList.remove('hidden');
+            
+            // Calculate average scale
+            const avgScale = calibrationState.measurements.reduce((sum, m) => sum + m.calculatedScale, 0) / calibrationState.measurements.length;
+            
+            // Display results
+            const resultsDiv = document.getElementById('calibration-results');
+            resultsDiv.innerHTML = calibrationState.measurements.map(m => 
+                `Test ${m.test}: Scale = ${m.calculatedScale.toFixed(6)} (gyro: ${m.gyroSum.toFixed(0)})`
+            ).join('<br>');
+            
+            document.getElementById('calibration-calculated-scale').textContent = avgScale.toFixed(6);
+            
+            calibrationState.calculatedScale = avgScale;
+            log(`📊 Calibration complete: Average GYRO_SCALE = ${avgScale.toFixed(6)}`);
+        }
+
+        document.getElementById('calibration-apply-button').addEventListener('click', () => {
+            CONFIG.GYRO_SCALE = calibrationState.calculatedScale;
+            log(`✅ Applied new GYRO_SCALE: ${CONFIG.GYRO_SCALE.toFixed(6)}`);
+            alert(`Calibration applied! New GYRO_SCALE: ${CONFIG.GYRO_SCALE.toFixed(6)}`);
+            closeCalibrationWizard();
+        });
+
+        document.getElementById('calibration-retry-button').addEventListener('click', () => {
+            document.getElementById('calibration-step-3').classList.add('hidden');
+            document.getElementById('calibration-step-1').classList.remove('hidden');
+            calibrationState.testNumber = 0;
+            calibrationState.measurements = [];
+        });
+
+        document.getElementById('calibration-close-button').addEventListener('click', closeCalibrationWizard);
+
+        // ═══════════════════════════════════════════════════════════════
+        // THREE.JS 3D VISUALIZATION SETUP
+        // ═══════════════════════════════════════════════════════════════
+
+        // Optimize animation loop - skip frames if needed
+        let lastFrameTime = 0;
+        const targetFPS = 60;
+        const frameInterval = 1000 / targetFPS;
+        
+        function animate(currentTime = 0) {
+            requestAnimationFrame(animate);
+            
+            // Throttle to target FPS
+            if (currentTime - lastFrameTime < frameInterval) {
+                return; // Skip this frame
+            }
+            lastFrameTime = currentTime;
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function initThreeJS() {
+            const container = document.getElementById('three-container');
+            
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x2d3748); // bg-gray-800
+            
+            // Camera - positioned to look down at desk from viewer's perspective
+            // Simulates looking at toothbrush standing on desk in front of you
+            const sizes = {
+              width: container.offsetWidth,
+              height: container.offsetHeight
+            }
+            camera = new THREE.PerspectiveCamera(50, sizes.width / sizes.height, 0.1, 300)
+            // Position: adjusted for optimal viewing angle
+            camera.position.set(3.87, -7.54, 5.30);
+            camera.lookAt(0, 0, 1.5);  // Look at brush center
+            // Up vector: Z points up (normal orientation)
+            camera.up.set(0, 0, 1);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            // Toothbrush Model (Handle + Brush Head)
+            // Note: Three.js cylinders are created along Y axis by default
+            // We want the toothbrush standing upright (Y-up)
+
+            // Create handle with stripes to visualize rotation
+            const handleGeometry = new THREE.CylinderGeometry(0.4, 0.4, 3, 32);
+
+            // Create a canvas texture with both horizontal and vertical stripes
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            // Fill base color
+            ctx.fillStyle = '#1e3a8a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw horizontal stripes (for pitch/roll visualization)
+            ctx.fillStyle = '#3b82f6';
+            for (let i = 0; i < canvas.height; i += 64) {
+                ctx.fillRect(0, i, canvas.width, 32);
+            }
+
+            // Draw vertical stripes (for Z-axis rotation visualization)
+            ctx.fillStyle = '#60a5fa';
+            for (let i = 0; i < canvas.width; i += 64) {
+                ctx.fillRect(i, 0, 32, canvas.height);
+            }
+
+            // Add a distinct red line to track rotation
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(0, 0, 20, canvas.height);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+
+            const handleMaterial = new THREE.MeshStandardMaterial({
+                map: texture,
+                color: 0xffffff // White to show texture colors properly
+            });
+            const handleMesh = new THREE.Mesh(handleGeometry, handleMaterial);
+
+            // Brush head (on top) - flattened cylinder to represent bristles
+            const brushHeadGeometry = new THREE.CylinderGeometry(0.35, 0.35, 0.6, 32);
+            const brushHeadMaterial = new THREE.MeshStandardMaterial({ color: 0x60a5fa }); // Light blue
+            const brushHeadMesh = new THREE.Mesh(brushHeadGeometry, brushHeadMaterial);
+            brushHeadMesh.position.y = 1.8; // Position at top of handle
+
+            // Bristles (small cylinders on top of brush head)
+            const bristlesGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.4, 16);
+            const bristlesMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff }); // White
+            const bristlesMesh = new THREE.Mesh(bristlesGeometry, bristlesMaterial);
+            bristlesMesh.position.y = 2.3; // On top of brush head
+
+            // Add visual button markers on the handle to validate rotation
+            // Power button (right side) - RED sphere
+            const powerButtonGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+            const powerButtonMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.3 }); // Red
+            const powerButton = new THREE.Mesh(powerButtonGeometry, powerButtonMaterial);
+            powerButton.position.set(0, 0.5, 0.42); // Right side of handle, middle height
+
+            // Add a marker line on the left to help see rotation
+            const lineGeometry = new THREE.BoxGeometry(0.05, 1.0, 0.05);
+            const lineMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0xffff00, emissiveIntensity: 0.5 }); // Yellow
+            const backMarker = new THREE.Mesh(lineGeometry, lineMaterial);
+            backMarker.position.set(0, 0, -0.42); // Left side of handle
+
+            // Create group to hold all parts
+            toothbrushMesh = new THREE.Group();
+            toothbrushMesh.add(handleMesh);
+            toothbrushMesh.add(brushHeadMesh);
+            toothbrushMesh.add(bristlesMesh);
+            toothbrushMesh.add(powerButton);
+            toothbrushMesh.add(backMarker);
+
+            // INITIAL ROTATION:
+            // Three.js cylinder is created along Y-axis by default
+            // Rotate to align with Z-axis (standing upright) before sensor data arrives
+            toothbrushMesh.rotation.x = Math.PI / 2; // Rotate 90° to point up along Z-axis
+
+            scene.add(toothbrushMesh);
+
+
+            // Axes Helper
+            const axesHelper = new THREE.AxesHelper(3);
+            scene.add(axesHelper);
+
+            // Add X, Y, Z labels using sprites
+            const createTextLabel = (text, color, position) => {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = 128;
+                canvas.height = 128;
+
+                context.font = 'Bold 80px Arial';
+                context.fillStyle = color;
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillText(text, 64, 64);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+                const sprite = new THREE.Sprite(spriteMaterial);
+                sprite.scale.set(0.5, 0.5, 1);
+                sprite.position.copy(position);
+                return sprite;
+            };
+
+            // Add labels at the end of each axis showing Three.js axis names
+            // Three.js coordinate system:
+            // X-axis (red) = horizontal right
+            scene.add(createTextLabel('X', '#ff0000', new THREE.Vector3(3.5, 0, 0)));
+            // Y-axis (green) = horizontal forward (depth)
+            scene.add(createTextLabel('Y', '#00ff00', new THREE.Vector3(0, 3.5, 0)));
+            // Z-axis (blue) = vertical UP
+            scene.add(createTextLabel('Z', '#0000ff', new THREE.Vector3(0, 0, 3.5)));
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(5, 10, 7.5);
+            scene.add(directionalLight);
+
+            // Controls - Enabled for camera positioning
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enabled = true; // Enable mouse controls (zoom, rotate, pan)
+
+            // Handle resizing
+            window.addEventListener('resize', () => {
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            });
+
+            // Start animation loop
+            animate();
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // CHART.JS SENSOR GRAPH SETUP
+        // ═══════════════════════════════════════════════════════════════
+
+        function initChartJS() {
+            const ctx = document.getElementById('sensor-chart-canvas').getContext('2d');
+            sensorChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Gyro X', borderColor: 'rgba(255, 99, 132, 1)', data: [], fill: false, tension: 0.1 },
+                        { label: 'Gyro Y', borderColor: 'rgba(54, 162, 235, 1)', data: [], fill: false, tension: 0.1 },
+                        { label: 'Gyro Z', borderColor: 'rgba(255, 206, 86, 1)', data: [], fill: false, tension: 0.1 },
+                        { label: 'Accel X', borderColor: 'rgba(75, 192, 192, 0.5)', data: [], fill: false, tension: 0.1, borderDash: [5, 5] },
+                        { label: 'Accel Y', borderColor: 'rgba(153, 102, 255, 0.5)', data: [], fill: false, tension: 0.1, borderDash: [5, 5] },
+                        { label: 'Accel Z', borderColor: 'rgba(255, 159, 64, 0.5)', data: [], fill: false, tension: 0.1, borderDash: [5, 5] },
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.1)' } }
+                    },
+                    plugins: { legend: { labels: { color: 'white' } } },
+                    animation: false
+                }
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // INITIALIZE VISUALIZATION & CHART
+        // ═══════════════════════════════════════════════════════════════
+
+        // Initialize 3D visualization
+        initThreeJS();
+
+        // Initialize chart
+        initChartJS();
+
+        // ═══════════════════════════════════════════════════════════════
+        // BLUETOOTH CONNECTION FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════
+
+        async function connectDevice() {
+            updateProgress(0, 'Starting connection...');
+            connectionProgress.classList.remove('hidden');
+            connectButton.disabled = true;
+
+            try {
+                // Step 1: Request device (requires user gesture - can only happen once)
+                log('Requesting Bluetooth Device...');
+                updateProgress(10, '📱 Opening Bluetooth selector... SELECT YOUR DEVICE!');
+
+                device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: [BLE.SERVICES.HANDLE] }],
+                    optionalServices: [
+                        BLE.SERVICES.HANDLE, BLE.SERVICES.BRUSHING, BLE.SERVICES.ORIENTATION,
+                        BLE.SERVICES.BRUSH, BLE.SERVICES.BATTERY, BLE.SERVICES.DEVICE_INFO
+                    ]
+                });
+
+                updateProgress(30, '✅ Device selected! Connecting to GATT...');
+                log('Device selected. Connecting to GATT Server...');
+
+                device.addEventListener('gattserverdisconnected', onDisconnected);
+
+                // Step 2: Connect to GATT with improved retry logic
+                const MAX_RETRIES = CONFIG.MAX_RETRIES;
+                const TIMEOUT_MS = CONFIG.TIMEOUT_MS;
+                let connected = false;
+
+                for (let attempt = 0; attempt < MAX_RETRIES && !connected; attempt++) {
+                    try {
+                        if (attempt > 0) {
+                            // Exponential backoff: 500ms, 1000ms, 1500ms, 2000ms
+                            const waitTime = Math.min(CONFIG.RETRY_BACKOFF_MS * attempt, CONFIG.MAX_BACKOFF_MS);
+                            log(`⏳ Waiting ${waitTime}ms before retry ${attempt + 1}/${MAX_RETRIES}...`);
+                            updateProgress(30 + (attempt * 10), `⏳ Retry ${attempt}/${MAX_RETRIES - 1} in ${waitTime}ms...`);
+                            await sleep(waitTime);
+                        }
+
+                        const attemptMsg = attempt === 0
+                            ? '🔗 Connecting... (Keep toothbrush awake!)'
+                            : `🔗 Retry ${attempt}/${MAX_RETRIES - 1}... (KEEP TOOTHBRUSH MOVING!)`;
+
+                        updateProgress(30 + (attempt * 12), attemptMsg);
+                        log(`Connection attempt ${attempt + 1}/${MAX_RETRIES}...`);
+
+                        // Try to connect with timeout AND countdown
+                        server = await connectWithTimeout(device, TIMEOUT_MS, attempt + 1, MAX_RETRIES);
+
+                        connected = true;
+                        countdownTimer.textContent = ''; // Clear countdown
+                        updateProgress(70, '✅ Connected! Keeping device awake...');
+                        log('✅ Connected! Fetching services...');
+
+                        // Add a delay to ensure connection is stable
+                        // The toothbrush goes to sleep very quickly if idle
+                        await sleep(1000);
+
+                        // Verify still connected after delay
+                        if (!server || !server.connected) {
+                            throw new Error('Device went to sleep during connection. Try again with toothbrush ON CHARGER.');
+                        }
+
+                    } catch (connectError) {
+                        countdownTimer.textContent = ''; // Clear countdown on error
+
+                        if (attempt < MAX_RETRIES - 1) {
+                            log(`❌ Connection failed: ${connectError.message}. Retrying...`);
+                            setStatusWarning(`⚠️ Retry ${attempt + 1}/${MAX_RETRIES}... KEEP TOOTHBRUSH AWAKE! (on charger = best)`);
+                        } else {
+                            throw new Error(`Failed after ${MAX_RETRIES} attempts: ${connectError.message}`);
+                        }
+                    }
+                }
+
+                // Step 3: Read static data
+                updateProgress(75, '📖 Reading device data...');
+                try {
+                    await readStaticData();
+                } catch (readError) {
+                    log(`Error reading static data: ${readError.message}`);
+                    // Don't fail entirely - continue to notifications
+                }
+
+                updateProgress(85, '📊 Data loaded! Subscribing to live updates...');
+
+                // Step 4: Subscribe to notifications
+                try {
+                    await subscribeToNotifications();
+                } catch (subError) {
+                    throw new Error(`Error subscribing to notifications: ${subError.message}`);
+                }
+
+                updateProgress(100, '🎉 Fully connected!');
+
+                setTimeout(() => {
+                    connectionProgress.classList.add('hidden');
+                    setStatusSuccess('✅ Connected successfully! Data is now streaming.');
+                }, 2000);
+
+                connectButton.disabled = false;
+                connectButton.textContent = "Disconnect";
+                connectButton.onclick = disconnectDevice;
+
+            } catch(error) {
+                connectionProgress.classList.add('hidden');
+                connectButton.disabled = false;
+                countdownTimer.textContent = '';
+
+                if (error.name === 'NotFoundError') {
+                    log('❌ No device found. Make sure toothbrush is awake and nearby.');
+                    setStatusError('❌ No device found. Is Bluetooth enabled? Is toothbrush nearby?');
+                } else if (error.message.includes('User cancelled')) {
+                    log('ℹ️ User cancelled device selection.');
+                    setStatusWarning('ℹ️ Connection cancelled by user. Click Connect to try again.');
+                } else if (error.message.includes('Failed after')) {
+                    log(`❌ ${error.message}`);
+                    setStatusError('❌ All retries failed! TIP: Place toothbrush ON CHARGER and try again.');
+                } else if (error.message.includes('went to sleep') || error.message.includes('disconnected before')) {
+                    log(`❌ ${error.message}`);
+                    setStatusError('❌ Toothbrush went to sleep! TIP: Keep it ON CHARGER during connection.');
+                } else {
+                    log(`❌ Error: ${error.message}`);
+                    setStatusError(`❌ Error: ${error.message}`);
+                }
+            }
+        }
+
+        // New helper function: Connect with timeout AND visual countdown
+        async function connectWithTimeout(device, timeoutMs, attemptNum, maxAttempts) {
+            let countdownInterval;
+            const startTime = Date.now();
+
+            // Start countdown timer
+            countdownInterval = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                const remaining = Math.max(0, Math.ceil((timeoutMs - elapsed) / 1000));
+                countdownTimer.textContent = `⏱️ ${remaining}s`;
+
+                if (remaining === 0) {
+                    clearInterval(countdownInterval);
+                }
+            }, 100);
+
+            try {
+                const result = await Promise.race([
+                    device.gatt.connect(),
+                    new Promise((_, reject) => {
+                        setTimeout(() => {
+                            reject(new Error(`Connection timeout (${timeoutMs/1000}s)`));
+                        }, timeoutMs);
+                    })
+                ]);
+
+                clearInterval(countdownInterval);
+                return result;
+            } catch (error) {
+                clearInterval(countdownInterval);
+                throw error;
+            }
+        }
+
+        async function disconnectDevice() {
+            if (!device) return;
+            log('Disconnecting...');
+            countdownTimer.textContent = '';
+            if (device.gatt.connected) {
+                await device.gatt.disconnect();
+            } else {
+                log('Already disconnected.');
+            }
+            setStatusWarning('ℹ️ Disconnected. Click Connect to reconnect.');
+        }
+
+        function onDisconnected() {
+            log('Device Disconnected.');
+            countdownTimer.textContent = '';
+            connectButton.textContent = "Connect to Toothbrush";
+            connectButton.onclick = connectDevice;
+            connectButton.disabled = false;
+            setStatusWarning('⚠️ Device disconnected. Toothbrush may have gone to sleep.');
+        }
+
+        async function readStaticData() {
+            log('Reading static data...');
+
+            // Check if device is still connected
+            if (!server || !server.connected) {
+                throw new Error('Device disconnected before static data could be read');
+            }
+
+            try {
+                // Get Battery
+                const batteryService = await server.getPrimaryService(BLE.SERVICES.BATTERY);
+                const batteryChar = await batteryService.getCharacteristic(BLE.CHARS.BATTERY_LEVEL);
+                const batteryValue = await batteryChar.readValue();
+                ui.battery.textContent = `${batteryValue.getUint8(0)} %`;
+                
+                // Get Handle Service
+                const handleService = await server.getPrimaryService(BLE.SERVICES.HANDLE);
+
+                // Get Handle State
+                const handleStateChar = await handleService.getCharacteristic(BLE.CHARS.HANDLE_STATE);
+                const handleStateValue = await handleStateChar.readValue();
+                updateHandleState(handleStateValue);
+
+                // Get Handle Time
+                try {
+                    const handleTimeChar = await handleService.getCharacteristic(BLE.CHARS.HANDLE_TIME);
+                    const handleTimeValue = await handleTimeChar.readValue();
+                    if (handleTimeValue.byteLength >= 4) {
+                        const timestamp = handleTimeValue.getUint32(0, true);
+                        const date = new Date(timestamp * 1000);
+                        ui.handleTime.textContent = date.toLocaleString();
+                    } else {
+                        ui.handleTime.textContent = 'Invalid data';
+                    }
+                } catch (e) {
+                    log(`Handle Time read error: ${e.message}`);
+                    ui.handleTime.textContent = 'N/A';
+                }
+
+                // Get Routine ID
+                try {
+                    const routineIdChar = await handleService.getCharacteristic(BLE.CHARS.ROUTINE_ID);
+                    const routineIdValue = await routineIdChar.readValue();
+                    if (routineIdValue.byteLength >= 1) {
+                        ui.routineId.textContent = routineIdValue.getUint8(0);
+                    } else {
+                        ui.routineId.textContent = 'No data';
+                    }
+                } catch (e) {
+                    log(`Routine ID read error: ${e.message}`);
+                    ui.routineId.textContent = 'N/A';
+                }
+
+                // Get Motor Runtime
+                try {
+                    const motorRuntimeChar = await handleService.getCharacteristic(BLE.CHARS.MOTOR_RUNTIME);
+                    const motorRuntimeValue = await motorRuntimeChar.readValue();
+                    if (motorRuntimeValue.byteLength >= 4) {
+                        const seconds = motorRuntimeValue.getUint32(0, true);
+                        ui.motorRuntime.textContent = formatDuration(seconds);
+                    } else if (motorRuntimeValue.byteLength >= 2) {
+                        const seconds = motorRuntimeValue.getUint16(0, true);
+                        ui.motorRuntime.textContent = formatDuration(seconds);
+                    } else {
+                        ui.motorRuntime.textContent = 'Invalid data';
+                    }
+                } catch (e) {
+                    log(`Motor Runtime read error: ${e.message}`);
+                    ui.motorRuntime.textContent = 'N/A';
+                }
+                
+                // Get Brushing Service
+                const brushingService = await server.getPrimaryService(BLE.SERVICES.BRUSHING);
+
+                // Get Mode
+                const modeChar = await brushingService.getCharacteristic(BLE.CHARS.MODE);
+                const modeValue = await modeChar.readValue();
+                updateMode(modeValue);
+
+                // Get Brush Service
+                const brushService = await server.getPrimaryService(BLE.SERVICES.BRUSH);
+                const textDecoder = new TextDecoder('utf-8');
+
+                // Get Brush Serial (binary data - display as hex)
+                try {
+                    const brushSerialChar = await brushService.getCharacteristic(BLE.CHARS.BRUSH_SERIAL);
+                    const brushSerialValue = await brushSerialChar.readValue();
+
+                    if (brushSerialValue.byteLength > 0) {
+                        // Display as hex bytes (e.g., "3B 42 8F A1")
+                        const hexArray = Array.from(new Uint8Array(brushSerialValue.buffer))
+                            .map(b => b.toString(16).padStart(2, '0').toUpperCase());
+                        ui.brushSerial.textContent = hexArray.join(' ');
+                    } else {
+                        ui.brushSerial.textContent = 'No data';
+                    }
+                } catch (e) {
+                    log(`Brush Serial read error: ${e.message}`);
+                    ui.brushSerial.textContent = 'Error reading';
+                }
+
+                // Get Brush Usage (with error handling)
+                try {
+                    const brushUsageChar = await brushService.getCharacteristic(BLE.CHARS.BRUSH_USAGE);
+                    const brushUsageValue = await brushUsageChar.readValue();
+                    if (brushUsageValue.byteLength >= 4) {
+                        // 4-byte unsigned int, little-endian
+                        const seconds = brushUsageValue.getUint32(0, true);
+                        ui.brushUsage.textContent = formatDuration(seconds);
+                    } else if (brushUsageValue.byteLength >= 2) {
+                        // Fallback: try 2-byte value
+                        const seconds = brushUsageValue.getUint16(0, true);
+                        ui.brushUsage.textContent = formatDuration(seconds);
+                    } else {
+                        ui.brushUsage.textContent = 'Invalid data length';
+                        log(`Brush Usage: unexpected length ${brushUsageValue.byteLength}`);
+                    }
+                } catch (e) {
+                    log(`Brush Usage read error: ${e.message}`);
+                    ui.brushUsage.textContent = 'Error reading';
+                }
+
+                // Get Brush Type (with error handling)
+                try {
+                    const brushTypeChar = await brushService.getCharacteristic(BLE.CHARS.BRUSH_TYPE);
+                    const brushTypeValue = await brushTypeChar.readValue();
+                    if (brushTypeValue.byteLength >= 1) {
+                        const brushType = brushTypeValue.getUint8(0);
+                        ui.brushType.textContent = DATA_MAPS.BRUSH_TYPE[brushType] || `Unknown (${brushType})`;
+                    } else {
+                        ui.brushType.textContent = 'No data';
+                        log(`Brush Type: empty response`);
+                    }
+                } catch (e) {
+                    log(`Brush Type read error: ${e.message}`);
+                    ui.brushType.textContent = 'Error reading';
+                }
+
+                // Get NFC Tag Version
+                try {
+                    const nfcTagVersionChar = await brushService.getCharacteristic(BLE.CHARS.NFC_TAG_VERSION);
+                    const nfcTagVersionValue = await nfcTagVersionChar.readValue();
+                    if (nfcTagVersionValue.byteLength > 0) {
+                        const hexArray = Array.from(new Uint8Array(nfcTagVersionValue.buffer))
+                            .map(b => '0x' + b.toString(16).padStart(2, '0').toUpperCase());
+                        ui.nfcTagVersion.textContent = hexArray.join(', ');
+                    } else {
+                        ui.nfcTagVersion.textContent = 'No data';
+                    }
+                } catch (e) {
+                    log(`NFC Tag Version read error: ${e.message}`);
+                    ui.nfcTagVersion.textContent = 'N/A';
+                }
+
+                // Get Factory Mode
+                try {
+                    const factoryModeChar = await brushService.getCharacteristic(BLE.CHARS.FACTORY_MODE);
+                    const factoryModeValue = await factoryModeChar.readValue();
+                    if (factoryModeValue.byteLength >= 3) {
+                        // 17-bit integer (3 bytes, use first 17 bits)
+                        const value = factoryModeValue.getUint8(0) | 
+                                      (factoryModeValue.getUint8(1) << 8) | 
+                                      ((factoryModeValue.getUint8(2) & 0x01) << 16);
+                        ui.factoryMode.textContent = `0x${value.toString(16).toUpperCase()} (${value})`;
+                    } else if (factoryModeValue.byteLength >= 1) {
+                        ui.factoryMode.textContent = `0x${factoryModeValue.getUint8(0).toString(16).toUpperCase()}`;
+                    } else {
+                        ui.factoryMode.textContent = 'No data';
+                    }
+                } catch (e) {
+                    log(`Factory Mode read error: ${e.message}`);
+                    ui.factoryMode.textContent = 'N/A';
+                }
+
+                // Get Lifetime Limit
+                try {
+                    const lifetimeLimitChar = await brushService.getCharacteristic(BLE.CHARS.LIFETIME_LIMIT);
+                    const lifetimeLimitValue = await lifetimeLimitChar.readValue();
+                    if (lifetimeLimitValue.byteLength >= 3) {
+                        // 18-bit integer (3 bytes)
+                        const seconds = lifetimeLimitValue.getUint8(0) | 
+                                        (lifetimeLimitValue.getUint8(1) << 8) | 
+                                        ((lifetimeLimitValue.getUint8(2) & 0x03) << 16);
+                        ui.lifetimeLimit.textContent = formatDuration(seconds);
+                    } else if (lifetimeLimitValue.byteLength >= 2) {
+                        const seconds = lifetimeLimitValue.getUint16(0, true);
+                        ui.lifetimeLimit.textContent = formatDuration(seconds);
+                    } else {
+                        ui.lifetimeLimit.textContent = 'No data';
+                    }
+                } catch (e) {
+                    log(`Lifetime Limit read error: ${e.message}`);
+                    ui.lifetimeLimit.textContent = 'N/A';
+                }
+
+                // Get Brush Head 4270
+                try {
+                    const char4270 = await brushService.getCharacteristic(BLE.CHARS.BRUSH_HEAD_4270);
+                    const value4270 = await char4270.readValue();
+                    if (value4270.byteLength > 0) {
+                        const textValue = textDecoder.decode(value4270).trim();
+                        const hexArray = Array.from(new Uint8Array(value4270.buffer))
+                            .map(b => '0x' + b.toString(16).padStart(2, '0').toUpperCase());
+                        ui.brushHead4270.textContent = textValue.length > 0 ? `"${textValue}" (${hexArray.join(', ')})` : hexArray.join(', ');
+                        log(`Brush Head 4270: "${textValue}" = ${hexArray.join(', ')}`);
+                    } else {
+                        ui.brushHead4270.textContent = 'No data';
+                    }
+                } catch (e) {
+                    log(`Brush Head 4270 read error: ${e.message}`);
+                    ui.brushHead4270.textContent = 'N/A';
+                }
+
+                // Get Brush Head 4280
+                try {
+                    const char4280 = await brushService.getCharacteristic(BLE.CHARS.BRUSH_HEAD_4280);
+                    const value4280 = await char4280.readValue();
+                    if (value4280.byteLength > 0) {
+                        const textValue = textDecoder.decode(value4280).trim();
+                        const hexArray = Array.from(new Uint8Array(value4280.buffer))
+                            .map(b => '0x' + b.toString(16).padStart(2, '0').toUpperCase());
+                        ui.brushHead4280.textContent = textValue.length > 0 ? `"${textValue}" (${hexArray.join(', ')})` : hexArray.join(', ');
+                        log(`Brush Head 4280: "${textValue}" = ${hexArray.join(', ')}`);
+                    } else {
+                        ui.brushHead4280.textContent = 'No data';
+                    }
+                } catch (e) {
+                    log(`Brush Head 4280 read error: ${e.message}`);
+                    ui.brushHead4280.textContent = 'N/A';
+                }
+
+                // Get Brush Head 42A2
+                try {
+                    const char42A2 = await brushService.getCharacteristic(BLE.CHARS.BRUSH_HEAD_42A2);
+                    const value42A2 = await char42A2.readValue();
+                    if (value42A2.byteLength > 0) {
+                        const hexArray = Array.from(new Uint8Array(value42A2.buffer))
+                            .map(b => '0x' + b.toString(16).padStart(2, '0').toUpperCase());
+                        ui.brushHead42A2.textContent = hexArray.join(', ');
+                        log(`Brush Head 42A2: ${hexArray.join(', ')}`);
+                    } else {
+                        ui.brushHead42A2.textContent = 'No data';
+                    }
+                } catch (e) {
+                    log(`Brush Head 42A2 read error: ${e.message}`);
+                    ui.brushHead42A2.textContent = 'N/A';
+                }
+
+                // Get Brush Head 42A4
+                try {
+                    const char42A4 = await brushService.getCharacteristic(BLE.CHARS.BRUSH_HEAD_42A4);
+                    const value42A4 = await char42A4.readValue();
+                    if (value42A4.byteLength > 0) {
+                        const hexArray = Array.from(new Uint8Array(value42A4.buffer))
+                            .map(b => '0x' + b.toString(16).padStart(2, '0').toUpperCase());
+                        ui.brushHead42A4.textContent = hexArray.join(', ');
+                        log(`Brush Head 42A4: ${hexArray.join(', ')}`);
+                    } else {
+                        ui.brushHead42A4.textContent = 'No data';
+                    }
+                } catch (e) {
+                    log(`Brush Head 42A4 read error: ${e.message}`);
+                    ui.brushHead42A4.textContent = 'N/A';
+                }
+
+                // Get Brush Head 42A6
+                try {
+                    const char42A6 = await brushService.getCharacteristic(BLE.CHARS.BRUSH_HEAD_42A6);
+                    const value42A6 = await char42A6.readValue();
+                    if (value42A6.byteLength > 0) {
+                        const hexArray = Array.from(new Uint8Array(value42A6.buffer))
+                            .map(b => '0x' + b.toString(16).padStart(2, '0').toUpperCase());
+                        ui.brushHead42A6.textContent = hexArray.join(', ');
+                        log(`Brush Head 42A6: ${hexArray.join(', ')}`);
+                    } else {
+                        ui.brushHead42A6.textContent = 'No data';
+                    }
+                } catch (e) {
+                    log(`Brush Head 42A6 read error: ${e.message}`);
+                    ui.brushHead42A6.textContent = 'N/A';
+                }
+
+                // Get Brush Head NFC URL (42B0)
+                try {
+                    const charNfcUrl = await brushService.getCharacteristic(BLE.CHARS.BRUSH_HEAD_NFC_URL);
+                    const valueNfcUrl = await charNfcUrl.readValue();
+                    if (valueNfcUrl.byteLength > 0) {
+                        const textValue = textDecoder.decode(valueNfcUrl).trim();
+                        const hexArray = Array.from(new Uint8Array(valueNfcUrl.buffer))
+                            .map(b => b.toString(16).padStart(2, '0').toUpperCase());
+                        if (textValue.length > 0 && textValue.startsWith('http')) {
+                            ui.brushHeadNfcUrl.innerHTML = `<a href="${textValue}" target="_blank" class="text-blue-400 hover:text-blue-300 underline">${textValue}</a>`;
+                        } else {
+                            ui.brushHeadNfcUrl.textContent = textValue.length > 0 ? `"${textValue}"` : `0x${hexArray.join('')}`;
+                        }
+                        log(`Brush Head NFC URL: "${textValue}" = 0x${hexArray.join('')}`);
+                    } else {
+                        ui.brushHeadNfcUrl.textContent = 'No data';
+                    }
+                } catch (e) {
+                    log(`Brush Head NFC URL read error: ${e.message}`);
+                    ui.brushHeadNfcUrl.textContent = 'N/A';
+                }
+
+                // Get Brush Head 42C0
+                try {
+                    const char42C0 = await brushService.getCharacteristic(BLE.CHARS.BRUSH_HEAD_42C0);
+                    const value42C0 = await char42C0.readValue();
+                    if (value42C0.byteLength > 0) {
+                        const hexArray = Array.from(new Uint8Array(value42C0.buffer))
+                            .map(b => '0x' + b.toString(16).padStart(2, '0').toUpperCase());
+                        ui.brushHead42C0.textContent = hexArray.join(', ');
+                        log(`Brush Head 42C0: ${hexArray.join(', ')}`);
+                    } else {
+                        ui.brushHead42C0.textContent = 'No data';
+                    }
+                } catch (e) {
+                    log(`Brush Head 42C0 read error: ${e.message}`);
+                    ui.brushHead42C0.textContent = 'N/A';
+                }
+
+                // Get Session ID (with error handling)
+                try {
+                    const sessionIdChar = await brushingService.getCharacteristic(BLE.CHARS.SESSION_ID);
+                    const sessionIdValue = await sessionIdChar.readValue();
+                    if (sessionIdValue.byteLength >= 2) {
+                        ui.sessionId.textContent = sessionIdValue.getUint16(0, true);
+                    } else if (sessionIdValue.byteLength === 1) {
+                        // Fallback: try single byte
+                        ui.sessionId.textContent = sessionIdValue.getUint8(0);
+                    } else {
+                        ui.sessionId.textContent = 'No data';
+                        log(`Session ID: empty response`);
+                    }
+                } catch (e) {
+                    log(`Session ID read error: ${e.message}`);
+                    ui.sessionId.textContent = 'Error reading';
+                }
+
+                // Get Active Time (with error handling)
+                try {
+                    const activeTimeChar = await brushingService.getCharacteristic(BLE.CHARS.ACTIVE_TIME);
+                    const activeTimeValue = await activeTimeChar.readValue();
+                    if (activeTimeValue.byteLength >= 1) {
+                        const seconds = activeTimeValue.getUint8(0);
+                        ui.activeTime.textContent = formatDuration(seconds);
+                    } else {
+                        ui.activeTime.textContent = 'No data';
+                        log(`Active Time: empty response`);
+                    }
+                } catch (e) {
+                    log(`Active Time read error: ${e.message}`);
+                    ui.activeTime.textContent = 'Error reading';
+                }
+
+                // Get Strength (with error handling)
+                try {
+                    const strengthChar = await brushingService.getCharacteristic(BLE.CHARS.STRENGTH);
+                    const strengthValue = await strengthChar.readValue();
+                    if (strengthValue.byteLength >= 1) {
+                        const strength = strengthValue.getUint8(0);
+                        ui.strength.textContent = DATA_MAPS.STRENGTH[strength] || `Unknown (${strength})`;
+                    } else {
+                        ui.strength.textContent = 'No data';
+                        log(`Strength: empty response`);
+                    }
+                } catch (e) {
+                    log(`Strength read error: ${e.message}`);
+                    ui.strength.textContent = 'Error reading';
+                }
+
+                // Get Routine Number
+                try {
+                    const routineNumberChar = await brushingService.getCharacteristic(BLE.CHARS.ROUTINE_NUMBER);
+                    const routineNumberValue = await routineNumberChar.readValue();
+                    if (routineNumberValue.byteLength >= 1) {
+                        ui.routineNumber.textContent = routineNumberValue.getUint8(0);
+                    } else {
+                        ui.routineNumber.textContent = 'No data';
+                    }
+                } catch (e) {
+                    log(`Routine Number read error: ${e.message}`);
+                    ui.routineNumber.textContent = 'N/A';
+                }
+
+                // Get Routine Length
+                try {
+                    const routineLengthChar = await brushingService.getCharacteristic(BLE.CHARS.ROUTINE_LENGTH);
+                    const routineLengthValue = await routineLengthChar.readValue();
+                    if (routineLengthValue.byteLength >= 2) {
+                        const seconds = routineLengthValue.getUint16(0, true);
+                        ui.routineLength.textContent = formatDuration(seconds);
+                    } else if (routineLengthValue.byteLength >= 1) {
+                        const seconds = routineLengthValue.getUint8(0);
+                        ui.routineLength.textContent = formatDuration(seconds);
+                    } else {
+                        ui.routineLength.textContent = 'No data';
+                    }
+                } catch (e) {
+                    log(`Routine Length read error: ${e.message}`);
+                    ui.routineLength.textContent = 'N/A';
+                }
+
+                // --- Read Device Information Service ---
+                try {
+                    const deviceInfoService = await server.getPrimaryService(BLE.SERVICES.DEVICE_INFO);
+                    const textDecoder2 = new TextDecoder('utf-8');
+
+                    // Manufacturer Name
+                    try {
+                        const mfgChar = await deviceInfoService.getCharacteristic(BLE.CHARS.MANUFACTURER_NAME);
+                        const mfgValue = await mfgChar.readValue();
+                        ui.manufacturer.textContent = textDecoder2.decode(mfgValue).trim();
+                    } catch (e) {
+                        log(`Manufacturer read error: ${e.message}`);
+                    }
+
+                    // Model Number
+                    try {
+                        const modelChar = await deviceInfoService.getCharacteristic(BLE.CHARS.MODEL_NUMBER);
+                        const modelValue = await modelChar.readValue();
+                        ui.model.textContent = textDecoder2.decode(modelValue).trim();
+                    } catch (e) {
+                        log(`Model read error: ${e.message}`);
+                    }
+
+                    // Serial Number - BLOCKLISTED by browsers for security
+                    // Cannot read 0x2a25 - browsers block this for privacy
+                    // try {
+                    //     const serialChar = await deviceInfoService.getCharacteristic(BLE.CHARS.SERIAL_NUMBER);
+                    //     const serialValue = await serialChar.readValue();
+                    //     ui.deviceSerial.textContent = textDecoder2.decode(serialValue).trim();
+                    // } catch (e) {
+                    //     log(`Serial read error: ${e.message}`);
+                    // }
+                    ui.deviceSerial.textContent = 'Blocked by browser';
+
+                    // Firmware Revision
+                    try {
+                        const fwChar = await deviceInfoService.getCharacteristic(BLE.CHARS.FIRMWARE_REV);
+                        const fwValue = await fwChar.readValue();
+                        ui.firmware.textContent = textDecoder2.decode(fwValue).trim();
+                    } catch (e) {
+                        log(`Firmware read error: ${e.message}`);
+                    }
+
+                    // Hardware Revision
+                    try {
+                        const hwChar = await deviceInfoService.getCharacteristic(BLE.CHARS.HARDWARE_REV);
+                        const hwValue = await hwChar.readValue();
+                        const hwText = textDecoder2.decode(hwValue).trim();
+                        ui.hardware.textContent = hwText.length > 0 ? hwText : 'N/A';
+                    } catch (e) {
+                        log(`Hardware read error: ${e.message}`);
+                    }
+
+                    // Software Revision
+                    try {
+                        const swChar = await deviceInfoService.getCharacteristic(BLE.CHARS.SOFTWARE_REV);
+                        const swValue = await swChar.readValue();
+                        const swText = textDecoder2.decode(swValue).trim();
+                        ui.software.textContent = swText.length > 0 ? swText : 'N/A';
+                    } catch (e) {
+                        log(`Software read error: ${e.message}`);
+                    }
+
+                    // System ID
+                    try {
+                        const systemIdChar = await deviceInfoService.getCharacteristic(BLE.CHARS.SYSTEM_ID);
+                        const systemIdValue = await systemIdChar.readValue();
+                        if (systemIdValue.byteLength > 0) {
+                            const hexArray = Array.from(new Uint8Array(systemIdValue.buffer))
+                                .map(b => b.toString(16).padStart(2, '0').toUpperCase());
+                            ui.systemId.textContent = '0x' + hexArray.join('');
+                            log(`System ID: 0x${hexArray.join('')}`);
+                        } else {
+                            ui.systemId.textContent = 'No data';
+                        }
+                    } catch (e) {
+                        log(`System ID read error: ${e.message}`);
+                        ui.systemId.textContent = 'N/A';
+                    }
+
+                    // IEEE 11073-20601 Regulatory Certification Data List
+                    try {
+                        const ieeeChar = await deviceInfoService.getCharacteristic(BLE.CHARS.IEEE_REGULATORY);
+                        const ieeeValue = await ieeeChar.readValue();
+                        if (ieeeValue.byteLength > 0) {
+                            const hexArray = Array.from(new Uint8Array(ieeeValue.buffer))
+                                .map(b => b.toString(16).padStart(2, '0').toUpperCase());
+                            ui.ieeeRegulatory.textContent = '0x' + hexArray.join('');
+                            log(`IEEE Regulatory: 0x${hexArray.join('')}`);
+                        } else {
+                            ui.ieeeRegulatory.textContent = 'No data';
+                        }
+                    } catch (e) {
+                        log(`IEEE Regulatory read error: ${e.message}`);
+                        ui.ieeeRegulatory.textContent = 'N/A';
+                    }
+
+                    // PnP ID
+                    try {
+                        const pnpChar = await deviceInfoService.getCharacteristic(BLE.CHARS.PNP_ID);
+                        const pnpValue = await pnpChar.readValue();
+                        if (pnpValue.byteLength > 0) {
+                            const hexArray = Array.from(new Uint8Array(pnpValue.buffer))
+                                .map(b => b.toString(16).padStart(2, '0').toUpperCase());
+                            
+                            // Parse PnP ID structure (7 bytes):
+                            // Byte 0: Vendor ID Source (0x01 = Bluetooth SIG)
+                            // Bytes 1-2: Vendor ID (little-endian)
+                            // Bytes 3-4: Product ID (little-endian)
+                            // Bytes 5-6: Product Version (little-endian)
+                            if (pnpValue.byteLength >= 7) {
+                                const vendorSrc = pnpValue.getUint8(0);
+                                const vendorId = pnpValue.getUint16(1, true);
+                                const productId = pnpValue.getUint16(3, true);
+                                const productVer = pnpValue.getUint16(5, true);
+                                
+                                const vendorSrcName = vendorSrc === 0x01 ? 'Bluetooth SIG' : vendorSrc === 0x02 ? 'USB' : 'Unknown';
+                                ui.pnpId.textContent = `${vendorSrcName}: Vendor=${vendorId}, Product=${productId}, Ver=${productVer} (0x${hexArray.join('')})`;
+                                log(`PnP ID: Source=${vendorSrcName}(${vendorSrc}), VID=0x${vendorId.toString(16)}, PID=0x${productId.toString(16)}, Ver=0x${productVer.toString(16)}`);
+                            } else {
+                                ui.pnpId.textContent = '0x' + hexArray.join('');
+                            }
+                        } else {
+                            ui.pnpId.textContent = 'No data';
+                        }
+                    } catch (e) {
+                        log(`PnP ID read error: ${e.message}`);
+                        ui.pnpId.textContent = 'N/A';
+                    }
+
+                } catch (e) {
+                    log(`Device Info Service error: ${e.message}`);
+                }
+
+                // --- Read Diagnostic Service ---
+                try {
+                    const diagnosticService = await server.getPrimaryService(BLE.SERVICES.DIAGNOSTIC);
+
+                    // Error Persistent
+                    try {
+                        const errorPersistentChar = await diagnosticService.getCharacteristic(BLE.CHARS.ERROR_PERSISTENT);
+                        const errorPersistentValue = await errorPersistentChar.readValue();
+                        if (errorPersistentValue.byteLength >= 3) {
+                            // 20-bit integer (3 bytes)
+                            const value = errorPersistentValue.getUint8(0) | 
+                                          (errorPersistentValue.getUint8(1) << 8) | 
+                                          ((errorPersistentValue.getUint8(2) & 0x0F) << 16);
+                            ui.errorPersistent.textContent = value === 0 ? 'None (0)' : `0x${value.toString(16).toUpperCase()} (${value})`;
+                        } else {
+                            ui.errorPersistent.textContent = 'No data';
+                        }
+                    } catch (e) {
+                        log(`Error Persistent read error: ${e.message}`);
+                        ui.errorPersistent.textContent = 'N/A';
+                    }
+
+                    // Error Volatile
+                    try {
+                        const errorVolatileChar = await diagnosticService.getCharacteristic(BLE.CHARS.ERROR_VOLATILE);
+                        const errorVolatileValue = await errorVolatileChar.readValue();
+                        if (errorVolatileValue.byteLength >= 3) {
+                            // 20-bit integer (3 bytes)
+                            const value = errorVolatileValue.getUint8(0) | 
+                                          (errorVolatileValue.getUint8(1) << 8) | 
+                                          ((errorVolatileValue.getUint8(2) & 0x0F) << 16);
+                            ui.errorVolatile.textContent = value === 0 ? 'None (0)' : `0x${value.toString(16).toUpperCase()} (${value})`;
+                        } else {
+                            ui.errorVolatile.textContent = 'No data';
+                        }
+                    } catch (e) {
+                        log(`Error Volatile read error: ${e.message}`);
+                        ui.errorVolatile.textContent = 'N/A';
+                    }
+
+                    // Proximity Value
+                    try {
+                        const proximityValueChar = await diagnosticService.getCharacteristic(BLE.CHARS.PROXIMITY_VALUE);
+                        const proximityValue = await proximityValueChar.readValue();
+                        if (proximityValue.byteLength > 0) {
+                            const hexArray = Array.from(new Uint8Array(proximityValue.buffer))
+                                .map(b => '0x' + b.toString(16).padStart(2, '0').toUpperCase());
+                            ui.proximityValue.textContent = hexArray.join(', ');
+                        } else {
+                            ui.proximityValue.textContent = 'No data';
+                        }
+                    } catch (e) {
+                        log(`Proximity Value read error: ${e.message}`);
+                        ui.proximityValue.textContent = 'N/A';
+                    }
+
+                    // Pressure Sensor
+                    try {
+                        const pressureSensorChar = await diagnosticService.getCharacteristic(BLE.CHARS.PRESSURE_SENSOR);
+                        const pressureSensorValue = await pressureSensorChar.readValue();
+                        if (pressureSensorValue.byteLength >= 2) {
+                            const value = pressureSensorValue.getUint16(0, true);
+                            ui.pressureSensor.textContent = value;
+                        } else if (pressureSensorValue.byteLength >= 1) {
+                            ui.pressureSensor.textContent = pressureSensorValue.getUint8(0);
+                        } else {
+                            ui.pressureSensor.textContent = 'No data';
+                        }
+                    } catch (e) {
+                        log(`Pressure Sensor read error: ${e.message}`);
+                        ui.pressureSensor.textContent = 'N/A';
+                    }
+
+                    // Invalid Charger Count
+                    try {
+                        const invalidChargerCountChar = await diagnosticService.getCharacteristic(BLE.CHARS.INVALID_CHARGER_COUNT);
+                        const invalidChargerCountValue = await invalidChargerCountChar.readValue();
+                        if (invalidChargerCountValue.byteLength >= 2) {
+                            const value = invalidChargerCountValue.getUint16(0, true);
+                            ui.invalidChargerCount.textContent = value;
+                        } else if (invalidChargerCountValue.byteLength >= 1) {
+                            ui.invalidChargerCount.textContent = invalidChargerCountValue.getUint8(0);
+                        } else {
+                            ui.invalidChargerCount.textContent = 'No data';
+                        }
+                    } catch (e) {
+                        log(`Invalid Charger Count read error: ${e.message}`);
+                        ui.invalidChargerCount.textContent = 'N/A';
+                    }
+
+                    // Debug Info
+                    try {
+                        const debugInfoChar = await diagnosticService.getCharacteristic(BLE.CHARS.DEBUG_INFO);
+                        const debugInfoValue = await debugInfoChar.readValue();
+                        const textDecoder = new TextDecoder('utf-8');
+                        if (debugInfoValue.byteLength > 0) {
+                            const debugText = textDecoder.decode(debugInfoValue).trim();
+                            ui.debugInfo.textContent = debugText.length > 0 ? debugText : 'Empty';
+                        } else {
+                            ui.debugInfo.textContent = 'No data';
+                        }
+                    } catch (e) {
+                        log(`Debug Info read error: ${e.message}`);
+                        ui.debugInfo.textContent = 'N/A';
+                    }
+
+                } catch (e) {
+                    log(`Diagnostic Service error: ${e.message}`);
+                }
+
+                log('Static data read successfully.');
+
+                // --- Read Sensor Configuration (4120) ---
+                try {
+                    const orientationService = await server.getPrimaryService(BLE.SERVICES.ORIENTATION);
+
+                    // Read 4120 - Sensor Configuration
+                    try {
+                        const char4120 = await orientationService.getCharacteristic(BLE.CHARS.ORIENTATION_CONFIG);
+                        const value4120 = await char4120.readValue();
+                        const bytes4120 = Array.from(new Uint8Array(value4120.buffer));
+
+                        // Parse as 16-bit little-endian integer
+                        const sensorConfigValue = value4120.getUint16(0, true);
+
+                        // Display in UI
+                        ui.sensorConfig.textContent = `${sensorConfigValue} (0x${sensorConfigValue.toString(16).padStart(4, '0')})`;
+
+                        log(`📊 Sensor Config (4120): ${sensorConfigValue} = [${bytes4120.join(', ')}] (hex: ${bytes4120.map(b => b.toString(16).padStart(2, '0')).join(' ')})`);
+                    } catch (e) {
+                        ui.sensorConfig.textContent = 'N/A';
+                        log(`⚠️ Sensor Config (4120): ${e.message}`);
+                    }
+
+                    // Try to read 4140 - Control characteristic (likely write-only)
+                    try {
+                        const char4140 = await orientationService.getCharacteristic(BLE.CHARS.ORIENTATION_CTRL);
+                        const value4140 = await char4140.readValue();
+                        const bytes4140 = Array.from(new Uint8Array(value4140.buffer));
+                        log(`📊 Orientation Control (4140): ${bytes4140.length} bytes = [${bytes4140.join(', ')}] (hex: ${bytes4140.map(b => b.toString(16).padStart(2, '0')).join(' ')})`);
+                    } catch (e) {
+                        log(`⚠️ Orientation Control (4140): ${e.message} (likely write-only)`);
+                    }
+                } catch (e) {
+                    log(`Orientation service exploration error: ${e.message}`);
+                }
+
+            } catch (error) {
+                log(`Error reading static data: ${error.message}`);
+            }
+        }
+
+        async function subscribeToNotifications() {
+            log('Subscribing to notifications...');
+
+            // Check if device is still connected
+            if (!server || !server.connected) {
+                throw new Error('Device disconnected before notifications could be subscribed');
+            }
+
+            // Log gyroscope capabilities info
+            console.log(`\n╔════════════════════════════════════════════════════════════════`);
+            console.log(`║ 📡 SENSOR CAPABILITIES`);
+            console.log(`╠════════════════════════════════════════════════════════════════`);
+            console.log(`║ ✅ 3-Axis GYROSCOPE (measures rotation rate)`);
+            console.log(`║    • Gyro X: Rotation around X-axis (pitch rate)`);
+            console.log(`║    • Gyro Y: Rotation around Y-axis (roll rate)`);
+            console.log(`║    • Gyro Z: Rotation around Z-axis (yaw rate - spin around brush length)`);
+            console.log(`║`);
+            console.log(`║ ✅ 3-Axis ACCELEROMETER (measures gravity & acceleration)`);
+            console.log(`║    • Used to determine brush orientation (pitch & roll)`);
+            console.log(`║    • Scale: ±4g range (4096 LSB/g)`);
+            console.log(`║`);
+            console.log(`║ ❌ NO MAGNETOMETER (compass)`);
+            console.log(`║    • Cannot determine absolute heading/north direction`);
+            console.log(`║    • Yaw (spin) is RELATIVE rotation only`);
+            console.log(`║    • Yaw will drift over time (normal for gyro-only systems)`);
+            console.log(`║`);
+            console.log(`║ 💡 ROTATION TRACKING:`);
+            console.log(`║    • Pitch & Roll: Accurate (from accelerometer)`);
+            console.log(`║    • Yaw: Tracks spinning motion but has no absolute reference`);
+            console.log(`║    • Use "Reset Yaw" button to zero out yaw drift`);
+            console.log(`╚════════════════════════════════════════════════════════════════\n`);
+
+            try {
+                // Gyroscope Data
+                const orientationService = await server.getPrimaryService(BLE.SERVICES.ORIENTATION);
+                const gyroChar = await orientationService.getCharacteristic(BLE.CHARS.GYRO_DATA);
+                await gyroChar.startNotifications();
+                gyroChar.addEventListener('characteristicvaluechanged', handleGyroData);
+                log('Subscribed to Gyroscope (4130)');
+
+                // Handle State (for live updates)
+                const handleService = await server.getPrimaryService(BLE.SERVICES.HANDLE);
+                const handleStateChar = await handleService.getCharacteristic(BLE.CHARS.HANDLE_STATE);
+                await handleStateChar.startNotifications();
+                handleStateChar.addEventListener('characteristicvaluechanged', (e) => updateHandleState(e.target.value));
+                log('Subscribed to Handle State (4010)');
+
+                // Session State (for live updates)
+                const brushingService = await server.getPrimaryService(BLE.SERVICES.BRUSHING);
+                const sessionStateChar = await brushingService.getCharacteristic(BLE.CHARS.SESSION_STATE);
+                await sessionStateChar.startNotifications();
+                sessionStateChar.addEventListener('characteristicvaluechanged', (e) => updateSessionState(e.target.value));
+                log('Subscribed to Session State (4082)');
+
+                // Mode (for live updates when you change it on brush)
+                const modeChar = await brushingService.getCharacteristic(BLE.CHARS.MODE);
+                await modeChar.startNotifications();
+                modeChar.addEventListener('characteristicvaluechanged', (e) => updateMode(e.target.value));
+                log('Subscribed to Mode (4080)');
+
+                // Active Time (for live updates)
+                const activeTimeChar = await brushingService.getCharacteristic(BLE.CHARS.ACTIVE_TIME);
+                await activeTimeChar.startNotifications();
+                activeTimeChar.addEventListener('characteristicvaluechanged', (e) => {
+                    const seconds = e.target.value.getUint8(0);
+                    ui.activeTime.textContent = formatDuration(seconds);
+                });
+                log('Subscribed to Active Time (4090)');
+
+                // Strength (for live updates)
+                const strengthChar = await brushingService.getCharacteristic(BLE.CHARS.STRENGTH);
+                await strengthChar.startNotifications();
+                strengthChar.addEventListener('characteristicvaluechanged', (e) => {
+                    const strength = e.target.value.getUint8(0);
+                    ui.strength.textContent = DATA_MAPS.STRENGTH[strength] || `Unknown (${strength})`;
+                });
+                log('Subscribed to Strength (40b0)');
+
+            } catch (error) {
+                log(`Error subscribing to notifications: ${error.message}`);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // DATA UPDATE FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════
+
+        function updateHandleState(dataView) {
+            const state = dataView.getUint8(0);
+            ui.handleState.textContent = DATA_MAPS.HANDLE_STATE[state] || `Unknown (${state})`;
+        }
+        
+        function updateMode(dataView) {
+            const mode = dataView.getUint8(0);
+            ui.mode.textContent = DATA_MAPS.BRUSHING_MODE[mode] || `Unknown (0x${mode.toString(16)})`;
+        }
+
+        function updateSessionState(dataView) {
+            const state = dataView.getUint8(0);
+            ui.sessionState.textContent = DATA_MAPS.SESSION_STATE[state] || `Unknown (${state})`;
+        }
+
+        function handleGyroData(event) {
+            const dataView = event.target.value;
+            const len = dataView.byteLength;
+
+            // DEBUG: Dump raw packet (first time only for each length)
+            if (!window.packetDumped || !window.packetDumped[len]) {
+                window.packetDumped = window.packetDumped || {};
+                window.packetDumped[len] = true;
+                const bytes = [];
+                for (let i = 0; i < len; i++) {
+                    bytes.push(dataView.getUint8(i).toString(16).padStart(2, '0'));
+                }
+                console.log(`🔍 RAW PACKET (${len} bytes):`);
+                if (len === 16) {
+                    console.log(`   [0-5]  Gyro:    ${bytes.slice(0, 6).join(' ')}`);
+                    console.log(`   [6-9]  Unknown: ${bytes.slice(6, 10).join(' ')}`);
+                    console.log(`   [10-15] Accel:   ${bytes.slice(10, 16).join(' ')}`);
+                } else if (len === 12) {
+                    console.log(`   [0-5]  Gyro:  ${bytes.slice(0, 6).join(' ')}`);
+                    console.log(`   [6-11] Accel: ${bytes.slice(6, 12).join(' ')}`);
+                } else {
+                    console.log(`   ${bytes.join(' ')}`);
+                }
+            }
+
+            // DEBUG: On-demand detailed packet dump
+            if (window.debugNextPacket && len >= 12) {
+                window.debugNextPacket = false;
+                console.log(`\n╔══════════════════════════════════════════════════════════════`);
+                console.log(`║ 🔬 DETAILED PACKET ANALYSIS (${len} bytes)`);
+                console.log(`╠══════════════════════════════════════════════════════════════`);
+
+                // Hex dump
+                const hexBytes = [];
+                for (let i = 0; i < len; i++) {
+                    hexBytes.push(dataView.getUint8(i).toString(16).padStart(2, '0'));
+                }
+                console.log(`║ HEX: ${hexBytes.join(' ')}`);
+                console.log(`╠══════════════════════════════════════════════════════════════`);
+
+                // All possible 16-bit interpretations
+                console.log(`║ ALL 16-bit INTERPRETATIONS (little-endian signed):`);
+                for (let offset = 0; offset <= len - 2; offset += 2) {
+                    const val = dataView.getInt16(offset, true);
+                    const scaledAccel = (val / 4096.0).toFixed(4);  // ±4g range
+                    const scaledAlt = (val / 16384.0).toFixed(4);   // ±2g range (for comparison)
+                    console.log(`║   [${offset.toString().padStart(2)}]: ${val.toString().padStart(6)} → ${scaledAccel}g (÷4096) OR ${scaledAlt}g (÷16384)`);
+                }
+                console.log(`╠══════════════════════════════════════════════════════════════`);
+                console.log(`║ LOOKING FOR: ±4096 (±1g vertical at ±4g range) when standing upright`);
+                console.log(`╚══════════════════════════════════════════════════════════════\n`);
+            }
+
+            // The gyro data can have different lengths:
+            // - 6 bytes: Likely gyro only (3x int16)
+            // - 7 bytes: Gyro (6 bytes) + 1 status byte
+            // - 12 bytes: Gyro + Accel (6x int16)
+            // - 16 bytes: Gyro + Accel + extra data (timestamp/counter)
+
+            let gyroX = 0, gyroY = 0, gyroZ = 0;
+            let accX = lastAccX, accY = lastAccY, accZ = lastAccZ; // Use last known values
+
+            if (len >= 6) {
+                // Always read gyro data (first 6 bytes)
+                gyroX = dataView.getInt16(0, true);
+                gyroY = dataView.getInt16(2, true);
+                gyroZ = dataView.getInt16(4, true);
+            }
+
+            if (len >= 12) {
+                // Read accelerometer data if available
+                // IMPORTANT: 16-byte packets have different structure than 12-byte!
+                if (len === 16) {
+                    // Hypothesis: 16-byte = [gyro(6)][unknown(4)][accel(6)]
+                    // Reading from bytes 10-15 instead of 6-11
+                    accX = dataView.getInt16(10, true);
+                    accY = dataView.getInt16(12, true);
+                    accZ = dataView.getInt16(14, true);
+
+                    // DEBUG: Show what's at old position (once)
+                    if (!window.showedAltPosition) {
+                        window.showedAltPosition = true;
+                        const oldX = dataView.getInt16(6, true);
+                        const oldY = dataView.getInt16(8, true);
+                        const oldZ = dataView.getInt16(10, true);
+                        console.log(`🔍 TESTING: 16-byte packet structure`);
+                        console.log(`   Position 6-11: X=${oldX}, Y=${oldY}, Z=${oldZ}`);
+                        console.log(`   Position 10-15: X=${accX}, Y=${accY}, Z=${accZ}`);
+                        console.log(`   Expected: one axis ≈ ±16384 for vertical orientation`);
+                    }
+                } else {
+                    // 12-byte packets use standard position
+                    accX = dataView.getInt16(6, true);
+                    accY = dataView.getInt16(8, true);
+                    accZ = dataView.getInt16(10, true);
+                }
+
+                // Store for future packets
+                lastAccX = accX;
+                lastAccY = accY;
+                lastAccZ = accZ;
+
+                // Log packet type occasionally
+                if (!window.lastPacketLog || (Date.now() - window.lastPacketLog) > 5000) {
+                    window.lastPacketLog = Date.now();
+                    console.log(`✅ Receiving ${len}-byte packets with ACCELEROMETER data`);
+                }
+            } else {
+                // No accelerometer in this packet - use last known values
+                if (!window.lastPacketLog || (Date.now() - window.lastPacketLog) > 5000) {
+                    window.lastPacketLog = Date.now();
+                    console.log(`⚠️ Receiving ${len}-byte packets WITHOUT accelerometer (gyro only) - using last known accel`);
+                }
+            }
+
+            if (len === 7) {
+                // 7-byte format: 6 bytes gyro + 1 byte status/counter
+                // The 7th byte might be a packet counter or status flag
+                // const statusByte = dataView.getUint8(6);
+            }
+
+            if (len === 16) {
+                // 16-byte format: might have extra data (timestamp? counter?)
+                // For now, we'll just use the first 12 bytes as gyro+accel
+                // and ignore bytes 12-15
+                // You can log them for debugging:
+                // const extra = dataView.getUint32(12, true);
+                // console.log('Extra data:', extra);
+            }
+
+            if (len !== 6 && len !== 7 && len !== 12 && len !== 16) {
+                // Only log truly unexpected lengths
+                log(`Unexpected gyro data length: ${len}`);
+                return;
+            }
+
+            // Debug: Log sensor values periodically (every 2 seconds)
+            const now = Date.now();
+            if (!window.lastSensorLog || (now - window.lastSensorLog) > 2000) {
+                window.lastSensorLog = now;
+
+                // Log gyroscope values
+                console.log(`🔄 GYRO RAW: X=${gyroX}, Y=${gyroY}, Z=${gyroZ}`);
+                console.log(`   • Gyro Z (spin around brush): ${gyroZ} ${Math.abs(gyroZ) > 50 ? '🌀 ROTATING!' : '(stationary)'}`);
+
+                // Log accelerometer if available
+                if (len >= 12) {
+                    const accX_g = accX * CONFIG.ACCEL_SCALE;
+                    const accY_g = accY * CONFIG.ACCEL_SCALE;
+                    const accZ_g = accZ * CONFIG.ACCEL_SCALE;
+                    const mag = Math.sqrt(accX_g**2 + accY_g**2 + accZ_g**2);
+                    console.log(`📊 ACCEL RAW: X=${accX}, Y=${accY}, Z=${accZ}`);
+                    console.log(`📊 ACCEL SCALED: X=${accX_g.toFixed(3)}g, Y=${accY_g.toFixed(3)}g, Z=${accZ_g.toFixed(3)}g, |mag|=${mag.toFixed(3)}g`);
+                    console.log(`📊 Expected: When vertical, one axis ≈ ±1g, magnitude ≈ 1g`);
+                }
+            }
+
+            // Update the graph
+            updateChart(gyroX, gyroY, gyroZ, accX, accY, accZ);
+
+            // Update the 3D model
+            update3DModel(gyroX, gyroY, gyroZ, accX, accY, accZ, event.timeStamp);
+        }
+
+        function updateChart(gx, gy, gz, ax, ay, az) {
+            const label = new Date().toLocaleTimeString();
+            sensorChart.data.labels.push(label);
+            sensorChart.data.datasets[0].data.push(gx);
+            sensorChart.data.datasets[1].data.push(gy);
+            sensorChart.data.datasets[2].data.push(gz);
+            sensorChart.data.datasets[3].data.push(ax);
+            sensorChart.data.datasets[4].data.push(ay);
+            sensorChart.data.datasets[5].data.push(az);
+
+            // Limit data points to 100
+            if (sensorChart.data.labels.length > 100) {
+                sensorChart.data.labels.shift();
+                sensorChart.data.datasets.forEach(dataset => dataset.data.shift());
+            }
+            sensorChart.update();
+        }
+        
+        /**
+         * Update 3D model from sensor data
+         * Combines accelerometer (pitch/roll) with gyroscope (yaw/spin)
+         */
+        function update3DModel(gyroX, gyroY, gyroZ, accX, accY, accZ, timestamp) {
+            if (!toothbrushMesh) return;
+
+            // Initialize timestamp on first call
+            if (!lastTimestamp) {
+                lastTimestamp = timestamp;
+                return;
+            }
+
+            const deltaTime = (timestamp - lastTimestamp) / 1000.0; // in seconds
+            lastTimestamp = timestamp;
+            
+            // Convert accelerometer values from sensor units to g-force using CONFIG
+            const accX_g = accX * CONFIG.ACCEL_SCALE;      // Sensor X in g-force
+            const accY_g = accY * CONFIG.ACCEL_SCALE;      // Sensor Y in g-force (brush length)
+            const accZ_g = accZ * CONFIG.ACCEL_SCALE;      // Sensor Z in g-force
+
+            // Update coordinate display
+            updateCoordinateDebug(accX, accY, accZ, accX_g, accY_g, accZ_g);
+
+            // 1. Process gyroscope rotation (Z-axis spin around brush length)
+            processGyroscopeRotation(gyroZ, deltaTime);
+
+            // 2. Update brush orientation from accelerometer (pitch & roll)
+            updateBrushOrientation(accX_g, accY_g, accZ_g);
+        }
+
+        /**
+         * Update the coordinate debug display with real-world and Three.js coordinates
+         * Throttled to reduce DOM updates
+         */
+        function updateCoordinateDebug(rawX, rawY, rawZ, worldX, worldY, worldZ) {
+            // Only update debug display every 200ms (debug info doesn't need to be real-time)
+            const now = Date.now();
+            if (!window.lastDebugUpdate || (now - window.lastDebugUpdate) > 200) {
+                // Cache DOM elements
+                if (!window.debugElementsCache) {
+                    window.debugElementsCache = {
+                        realX: document.getElementById('real-x'),
+                        realY: document.getElementById('real-y'),
+                        realZ: document.getElementById('real-z'),
+                        threejsX: document.getElementById('threejs-x'),
+                        threejsY: document.getElementById('threejs-y'),
+                        threejsZ: document.getElementById('threejs-z'),
+                        debugPitch: document.getElementById('debug-pitch'),
+                        debugRoll: document.getElementById('debug-roll'),
+                        debugYaw: document.getElementById('debug-yaw'),
+                    };
+                }
+                
+                const cache = window.debugElementsCache;
+                
+                // Real-world (sensor) coordinates in g - use CONFIG.ACCEL_SCALE
+                if (cache.realX) cache.realX.textContent = (rawX * CONFIG.ACCEL_SCALE).toFixed(3);
+                if (cache.realY) cache.realY.textContent = (rawY * CONFIG.ACCEL_SCALE).toFixed(3);
+                if (cache.realZ) cache.realZ.textContent = (rawZ * CONFIG.ACCEL_SCALE).toFixed(3);
+
+                // Three.js world coordinates (already in g)
+                if (cache.threejsX) cache.threejsX.textContent = worldX.toFixed(3);
+                if (cache.threejsY) cache.threejsY.textContent = worldY.toFixed(3);
+                if (cache.threejsZ) cache.threejsZ.textContent = worldZ.toFixed(3);
+
+                // Rotation values (already displayed elsewhere, but update debug too)
+                if (cache.debugPitch) cache.debugPitch.textContent = ui.pitch.textContent;
+                if (cache.debugRoll) cache.debugRoll.textContent = ui.roll.textContent;
+                if (cache.debugYaw) cache.debugYaw.textContent = ui.yaw.textContent;
+                
+                window.lastDebugUpdate = now;
+            }
+        }
+
+
+    </script>
 </body>
 </html>
