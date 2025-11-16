@@ -628,7 +628,7 @@
                 // Brushing/Routine Service
                 MODE:             `${SONICARE_BASE_UUID}4080`,
                 SESSION_STATE:    `${SONICARE_BASE_UUID}4082`,
-                SESSION_ID:       `${SONICARE_BASE_UUID}40b0`,
+                SESSION_ID:       `${SONICARE_BASE_UUID}40b1`,
                 ACTIVE_TIME:      `${SONICARE_BASE_UUID}4090`,
                 STRENGTH:         `${SONICARE_BASE_UUID}40b0`,
                 ROUTINE_NUMBER:   `${SONICARE_BASE_UUID}4091`,
@@ -705,9 +705,13 @@
 
         const CONFIG = {
             // Sensor calibration
-            ACCEL_SCALE: 1.0 / 4096.0,  // ±4g range (4096 LSB/g)
-            GYRO_SCALE: 0.013737,       // Gyroscope scale factor (rad/s per LSB) - calibrated via wizard
-            GYRO_DEADBAND: 50,          // Ignore gyro below threshold (reduces drift)
+            ACCEL_SCALE: 1.0 / 4096.0,  // Accelerometer scale factor: converts raw sensor value to 'g' units.
+                                        // Source: Sonicare toothbrush IMU datasheet, ±4g range = 4096 LSB/g.
+                                        // This means each LSB represents 1/4096 g. Used to convert raw readings to physical units.
+            GYRO_SCALE: 0.013737,       // Gyroscope scale factor (rad/s per LSB)
+                                        // Value determined via Sonicare calibration wizard (2025-04-12) for HX99xx series.
+                                        // See device datasheet and calibration logs for details.
+            GYRO_DEADBAND: 50,          // Gyroscope deadband threshold (raw sensor units, LSB). Empirically chosen to minimize drift from sensor noise while preserving real motion.
             SMOOTHING: 0.8,             // Rotation speed smoothing (0-1)
 
             // Connection settings
@@ -989,7 +993,7 @@
             // Throttle to every 100ms
             const now = Date.now();
             if (!window.lastSpeedUpdate || (now - window.lastSpeedUpdate) > 100) {
-                const rotationSpeedRaw = Math.abs(gyroZ) * 0.1; // Approximate deg/s
+                const rotationSpeedRaw = Math.abs(gyroZ) * CONFIG.GYRO_SCALE * (180 / Math.PI); // Convert rad/s to deg/s using CONFIG.GYRO_SCALE
                 lastRotationSpeed = (CONFIG.SMOOTHING * lastRotationSpeed) + ((1 - CONFIG.SMOOTHING) * rotationSpeedRaw);
                 ui.rotationSpeed.textContent = Math.round(lastRotationSpeed);
                 window.lastSpeedUpdate = now;
@@ -1282,8 +1286,8 @@
             const sizes = {
               width: container.offsetWidth,
               height: container.offsetHeight
-            }
-            camera = new THREE.PerspectiveCamera(50, sizes.width / sizes.height, 0.1, 300)
+            };
+            camera = new THREE.PerspectiveCamera(50, sizes.width / sizes.height, 0.1, 300);
             // Position: adjusted for optimal viewing angle
             camera.position.set(3.87, -7.54, 5.30);
             camera.lookAt(0, 0, 1.5);  // Look at brush center
@@ -1374,7 +1378,8 @@
             // INITIAL ROTATION:
             // Three.js cylinder is created along Y-axis by default
             // Rotate to align with Z-axis (standing upright) before sensor data arrives
-            toothbrushMesh.rotation.x = Math.PI / 2; // Rotate 90° to point up along Z-axis
+            const INITIAL_CYLINDER_ROTATION = Math.PI / 2; // 90° rotation to align cylinder upright
+            toothbrushMesh.rotation.x = INITIAL_CYLINDER_ROTATION; // Rotate 90° to point up along Z-axis
 
             scene.add(toothbrushMesh);
 
@@ -1957,8 +1962,15 @@
                         const textValue = textDecoder.decode(valueNfcUrl).trim();
                         const hexArray = Array.from(new Uint8Array(valueNfcUrl.buffer))
                             .map(b => b.toString(16).padStart(2, '0').toUpperCase());
-                        if (textValue.length > 0 && textValue.startsWith('http')) {
-                            ui.brushHeadNfcUrl.innerHTML = `<a href="${textValue}" target="_blank" class="text-blue-400 hover:text-blue-300 underline">${textValue}</a>`;
+                        if (textValue.length > 0 && textValue.startsWith('https://')) {
+                            // Create anchor element safely
+                            const a = document.createElement('a');
+                            a.href = textValue;
+                            a.target = '_blank';
+                            a.className = 'text-blue-400 hover:text-blue-300 underline';
+                            a.textContent = textValue;
+                            ui.brushHeadNfcUrl.textContent = ''; // Clear previous content
+                            ui.brushHeadNfcUrl.appendChild(a);
                         } else {
                             ui.brushHeadNfcUrl.textContent = textValue.length > 0 ? `"${textValue}"` : `0x${hexArray.join('')}`;
                         }
@@ -2639,7 +2651,13 @@
                 sensorChart.data.labels.shift();
                 sensorChart.data.datasets.forEach(dataset => dataset.data.shift());
             }
-            sensorChart.update();
+
+            // Throttle chart updates to reduce unnecessary redraws (100ms intervals)
+            const now = Date.now();
+            if (!window.lastChartUpdate || (now - window.lastChartUpdate) >= 100) {
+                sensorChart.update();
+                window.lastChartUpdate = now;
+            }
         }
         
         /**
