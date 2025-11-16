@@ -41,7 +41,7 @@ This is the primary service for toothbrush handle control and status monitoring.
   - `3` - Charge
   - `4` - Shutdown
   - `6` - Validate
-  - `7` - Background
+  - `7` - LightsOut
 
 #### 1.2 Handle Time
 - **UUID:** `477ea600-a260-11e4-ae37-0002a5d54050`
