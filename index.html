@@ -34,6 +34,13 @@
         .calibration-step.hidden {
             display: none !important;
         }
+        /* Collapse panels by default on mobile devices */
+        @media (max-width: 768px) {
+            #three-info-content,
+            #coordinate-content {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen p-4 md:p-8">
@@ -351,7 +358,7 @@
                         <div id="three-info" class="absolute top-2 left-2 bg-black/50 text-white text-xs rounded">
                             <button id="three-info-toggle" class="w-full text-left p-2 hover:bg-black/50 rounded font-semibold text-blue-300 flex items-center justify-between">
                                 <span>📊 Sensor Data</span>
-                                <span id="three-info-toggle-icon">▼</span>
+                                <span id="three-info-toggle-icon" class="icon-container">▼</span>
                             </button>
                             <div id="three-info-content" class="p-2 pt-0">
                             Pitch: <span id="pitch-value">0°</span><br>
@@ -1125,7 +1132,8 @@
         document.getElementById('three-info-toggle').addEventListener('click', () => {
             const content = document.getElementById('three-info-content');
             const icon = document.getElementById('three-info-toggle-icon');
-            if (content.style.display === 'none') {
+            const isHidden = window.getComputedStyle(content).display === 'none';
+            if (isHidden) {
                 content.style.display = 'block';
                 icon.textContent = '▼';
             } else {
@@ -1138,12 +1146,28 @@
         document.getElementById('coordinate-toggle').addEventListener('click', () => {
             const content = document.getElementById('coordinate-content');
             const icon = document.getElementById('coordinate-toggle-icon');
-            if (content.style.display === 'none') {
+            const isHidden = window.getComputedStyle(content).display === 'none';
+            if (isHidden) {
                 content.style.display = 'block';
                 icon.textContent = '▼';
             } else {
                 content.style.display = 'none';
                 icon.textContent = '▶';
+            }
+        });
+
+        // Set initial icon states based on CSS media query (mobile collapsed by default)
+        window.addEventListener('DOMContentLoaded', () => {
+            const threeInfoContent = document.getElementById('three-info-content');
+            const threeInfoIcon = document.getElementById('three-info-toggle-icon');
+            const coordinateContent = document.getElementById('coordinate-content');
+            const coordinateIcon = document.getElementById('coordinate-toggle-icon');
+            
+            if (window.getComputedStyle(threeInfoContent).display === 'none') {
+                threeInfoIcon.textContent = '▶';
+            }
+            if (window.getComputedStyle(coordinateContent).display === 'none') {
+                coordinateIcon.textContent = '▶';
             }
         });
 
