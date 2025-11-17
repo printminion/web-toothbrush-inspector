@@ -348,7 +348,12 @@
                 <div>
                     <h2 class="text-lg font-semibold mb-1">3D Orientation</h2>
                     <div id="three-container" class="bg-gray-800 rounded-lg shadow-md h-96 w-full relative">
-                        <div id="three-info" class="absolute top-2 left-2 bg-black/50 text-white text-xs p-2 rounded">
+                        <div id="three-info" class="absolute top-2 left-2 bg-black/50 text-white text-xs rounded">
+                            <button id="three-info-toggle" class="w-full text-left p-2 hover:bg-black/50 rounded font-semibold text-blue-300 flex items-center justify-between">
+                                <span>📊 Sensor Data</span>
+                                <span id="three-info-toggle-icon">▼</span>
+                            </button>
+                            <div id="three-info-content" class="p-2 pt-0">
                             Pitch: <span id="pitch-value">0°</span><br>
                             Roll: <span id="roll-value">0°</span><br>
                             Yaw: <span id="yaw-value">0°</span><br>
@@ -394,6 +399,7 @@
                             <button id="calibration-wizard-button" class="mt-2 w-full bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-2 rounded">
                                 🎯 Calibration Wizard
                             </button>
+                            </div>
                         </div>
                         <div id="button-legend" class="absolute top-2 right-2 bg-black/50 text-white text-xs p-2 rounded">
                             <div class="font-semibold mb-1">Orientation Markers:</div>
@@ -1113,6 +1119,19 @@
         document.getElementById('debug-packets-button').addEventListener('click', () => {
             window.debugNextPacket = true;
             log('🔍 Debug mode enabled - will dump next packet in detail');
+        });
+
+        // Three-info toggle button
+        document.getElementById('three-info-toggle').addEventListener('click', () => {
+            const content = document.getElementById('three-info-content');
+            const icon = document.getElementById('three-info-toggle-icon');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.textContent = '▼';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▶';
+            }
         });
 
         // Coordinate debug toggle button
