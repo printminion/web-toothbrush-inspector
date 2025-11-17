@@ -449,8 +449,8 @@
                         </div>
                         <div id="button-legend" class="absolute top-2 right-2 bg-black/50 text-white text-xs p-2 rounded">
                             <div class="font-semibold mb-1">Orientation Markers:</div>
-                            <div class="flex items-center gap-1"><span class="inline-block w-3 h-3 bg-red-500 rounded-full"></span> Power Button</div>
-                            <div class="flex items-center gap-1"><span class="inline-block w-1 h-3 bg-yellow-300"></span> Back Marker</div>
+                            <div class="flex items-center gap-1"><span class="inline-block w-3 h-3 bg-blue-500 rounded-full"></span> Power Button</div>
+                            <div class="flex items-center gap-1"><span class="inline-block w-1 h-3 bg-red-500"></span> Back Marker</div>
                         </div>
                         <div id="coordinate-debug" class="absolute bottom-2 left-2 bg-black/70 text-white text-xs rounded font-mono">
                             <button id="coordinate-toggle" class="w-full text-left p-2 hover:bg-black/50 rounded font-semibold text-yellow-300 flex items-center justify-between">
@@ -1315,6 +1315,89 @@
             renderer.render(scene, camera);
         }
 
+        /**
+         * Create the toothbrush 3D model with handle, brush head, and visual markers
+         * @returns {THREE.Group} The toothbrush mesh group
+         */
+        function createToothbrush() {
+            const toothbrushModel = new THREE.Group();
+            toothbrushModel.castShadow = true;
+            
+            const bodyMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.2,
+                metalness: 0.1
+            });
+            
+            const buttonMaterial = new THREE.MeshStandardMaterial({
+                color: 0x4299e1, // A "Sonicare" blue
+                roughness: 0.5,
+            });
+
+            const bristleMaterial = new THREE.MeshStandardMaterial({
+                color: 0xa0deff, // Light blue bristles
+                roughness: 0.6,
+            });
+
+            // Calculate total height to find midpoint
+            const handleLength = 10;
+            const neckLength = 2;
+            const headLength = 1.8;
+            const bristleHeight = 0.4;
+            const totalHeight = handleLength + neckLength + headLength / 2 + bristleHeight;
+            const midpoint = totalHeight / 2;
+
+            // 1. Main Handle (centered around midpoint)
+            const handleRadiusTop = 0.6;
+            const handleRadiusBottom = 0.7;
+            const handleGeometry = new THREE.CylinderGeometry(handleRadiusBottom, handleRadiusTop, handleLength, 32);
+            const handle = new THREE.Mesh(handleGeometry, bodyMaterial);
+            handle.position.y = handleLength / 2 - midpoint; // Offset by midpoint
+            handle.castShadow = true;
+            toothbrushModel.add(handle);
+
+            // 2. Button
+            const buttonGeometry = new THREE.CapsuleGeometry(0.3, 0.8, 16);
+            const button = new THREE.Mesh(buttonGeometry, buttonMaterial);
+            button.position.set(0, 7 - midpoint, 0.65); // Offset by midpoint
+            button.rotation.x = Math.PI / 2;
+            toothbrushModel.add(button);
+
+            // 3. Neck
+            const neckGeometry = new THREE.CylinderGeometry(0.3, 0.3, neckLength, 32);
+            const neck = new THREE.Mesh(neckGeometry, bodyMaterial);
+            neck.position.y = 11 - midpoint; // Offset by midpoint
+            neck.castShadow = true;
+            toothbrushModel.add(neck);
+
+            // 4. Head
+            const headGeometry = new THREE.BoxGeometry(0.8, headLength, 0.5);
+            const head = new THREE.Mesh(headGeometry, bodyMaterial);
+            head.position.y = 12.8 - midpoint; // Offset by midpoint
+            head.castShadow = true;
+            toothbrushModel.add(head);
+
+            // 5. Bristles
+            const bristleGeometry = new THREE.BoxGeometry(0.6, 1.4, bristleHeight);
+            const bristles = new THREE.Mesh(bristleGeometry, bristleMaterial);
+            bristles.position.y = 12.8 - midpoint; // Offset by midpoint
+            bristles.position.z = 0.4;
+            bristles.castShadow = true;
+            toothbrushModel.add(bristles);
+
+            // Add a marker line on the back to help see rotation
+            const lineGeometry = new THREE.BoxGeometry(0.05, handleLength, 0.05);
+            const lineMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.5 });
+            const backMarker = new THREE.Mesh(lineGeometry, lineMaterial);
+            backMarker.position.set(0, handleLength / 2 - midpoint, -handleRadiusBottom); // Offset by midpoint
+            toothbrushModel.add(backMarker);
+
+            toothbrushModel.rotation.x = Math.PI / 2;
+            toothbrushModel.scale.set(0.4, 0.4, 0.4);
+
+            return toothbrushModel;
+        }
+
         function initThreeJS() {
             const container = document.getElementById('three-container');
             
@@ -1339,90 +1422,9 @@
             renderer.setSize(container.clientWidth, container.clientHeight);
             container.appendChild(renderer.domElement);
 
-            // Toothbrush Model (Handle + Brush Head)
-            // Note: Three.js cylinders are created along Y axis by default
-            // We want the toothbrush standing upright (Y-up)
-
-            // Create handle with stripes to visualize rotation
-            const handleGeometry = new THREE.CylinderGeometry(0.4, 0.4, 3, 32);
-
-            // Create a canvas texture with both horizontal and vertical stripes
-            const canvas = document.createElement('canvas');
-            canvas.width = 512;
-            canvas.height = 512;
-            const ctx = canvas.getContext('2d');
-
-            // Fill base color
-            ctx.fillStyle = '#1e3a8a';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw horizontal stripes (for pitch/roll visualization)
-            ctx.fillStyle = '#3b82f6';
-            for (let i = 0; i < canvas.height; i += 64) {
-                ctx.fillRect(0, i, canvas.width, 32);
-            }
-
-            // Draw vertical stripes (for Z-axis rotation visualization)
-            ctx.fillStyle = '#60a5fa';
-            for (let i = 0; i < canvas.width; i += 64) {
-                ctx.fillRect(i, 0, 32, canvas.height);
-            }
-
-            // Add a distinct red line to track rotation
-            ctx.fillStyle = '#ff0000';
-            ctx.fillRect(0, 0, 20, canvas.height);
-
-            const texture = new THREE.CanvasTexture(canvas);
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-
-            const handleMaterial = new THREE.MeshStandardMaterial({
-                map: texture,
-                color: 0xffffff // White to show texture colors properly
-            });
-            const handleMesh = new THREE.Mesh(handleGeometry, handleMaterial);
-
-            // Brush head (on top) - flattened cylinder to represent bristles
-            const brushHeadGeometry = new THREE.CylinderGeometry(0.35, 0.35, 0.6, 32);
-            const brushHeadMaterial = new THREE.MeshStandardMaterial({ color: 0x60a5fa }); // Light blue
-            const brushHeadMesh = new THREE.Mesh(brushHeadGeometry, brushHeadMaterial);
-            brushHeadMesh.position.y = 1.8; // Position at top of handle
-
-            // Bristles (small cylinders on top of brush head)
-            const bristlesGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.4, 16);
-            const bristlesMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff }); // White
-            const bristlesMesh = new THREE.Mesh(bristlesGeometry, bristlesMaterial);
-            bristlesMesh.position.y = 2.3; // On top of brush head
-
-            // Add visual button markers on the handle to validate rotation
-            // Power button (right side) - RED sphere
-            const powerButtonGeometry = new THREE.SphereGeometry(0.15, 16, 16);
-            const powerButtonMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.3 }); // Red
-            const powerButton = new THREE.Mesh(powerButtonGeometry, powerButtonMaterial);
-            powerButton.position.set(0, 0.5, 0.42); // Right side of handle, middle height
-
-            // Add a marker line on the left to help see rotation
-            const lineGeometry = new THREE.BoxGeometry(0.05, 1.0, 0.05);
-            const lineMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0xffff00, emissiveIntensity: 0.5 }); // Yellow
-            const backMarker = new THREE.Mesh(lineGeometry, lineMaterial);
-            backMarker.position.set(0, 0, -0.42); // Left side of handle
-
-            // Create group to hold all parts
-            toothbrushMesh = new THREE.Group();
-            toothbrushMesh.add(handleMesh);
-            toothbrushMesh.add(brushHeadMesh);
-            toothbrushMesh.add(bristlesMesh);
-            toothbrushMesh.add(powerButton);
-            toothbrushMesh.add(backMarker);
-
-            // INITIAL ROTATION:
-            // Three.js cylinder is created along Y-axis by default
-            // Rotate to align with Z-axis (standing upright) before sensor data arrives
-            const INITIAL_CYLINDER_ROTATION = Math.PI / 2; // 90° rotation to align cylinder upright
-            toothbrushMesh.rotation.x = INITIAL_CYLINDER_ROTATION; // Rotate 90° to point up along Z-axis
-
+            // Create and add toothbrush model
+            toothbrushMesh = createToothbrush();
             scene.add(toothbrushMesh);
-
 
             // Axes Helper
             const axesHelper = new THREE.AxesHelper(3);
