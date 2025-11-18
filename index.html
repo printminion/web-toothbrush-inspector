@@ -10,15 +10,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web Toothbrush Inspector for Sonicare Toothbrush by @printminion</title>
     <!-- 1. Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="lib/tailwind.js"></script>
     <!-- 2. Chart.js for graphs -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="lib/chart.js"></script>
     <!-- 3. Three.js for 3D visualization -->
     <script type="importmap">
     {
         "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+            "three": "./lib/three/three.module.js",
+            "three/addons/": "./lib/three/addons/"
         }
     }
     </script>
