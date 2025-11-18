@@ -23,9 +23,24 @@
     }
     </script>
     <style>
+        /* Deep dark mode theme */
+        :root {
+            --gray-950: #0a0a0f;
+            --gray-900: #111827;
+            --gray-850: #1a1f2e;
+            --gray-800: #1f2937;
+            --gray-750: #283142;
+            --blue-500: #3b82f6;
+            --blue-600: #2563eb;
+            --green-500: #10b981;
+            --yellow-500: #f59e0b;
+            --red-500: #ef4444;
+        }
+
         /* Simple dark mode */
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--gray-950);
         }
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
@@ -33,14 +48,14 @@
             height: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #1a202c;
+            background: var(--gray-900);
         }
         ::-webkit-scrollbar-thumb {
-            background: #4a5568;
+            background: var(--gray-750);
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #718096;
+            background: var(--gray-800);
         }
 
         /* Tab Transitions */
@@ -474,12 +489,6 @@
                             <p id="data-ieee-regulatory" class="text-sm font-bold text-white">---</p>
                         </div>
 
-                <!-- PnP ID -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">PnP ID</h3>
-                    <p id="data-pnp-id" class="text-sm font-bold text-white">---</p>
-                </div>
-            </div>
                         <!-- PnP ID -->
                         <div class="bg-gray-800 p-2 rounded-lg shadow-md">
                             <h3 class="text-xs font-medium text-gray-400 uppercase">PnP ID</h3>
@@ -488,6 +497,7 @@
                     </div>
                 </div>
             </div>
+        </div>
 
             <!-- Column 2: Visualizations -->
             <div class="lg:col-span-2 space-y-3">
