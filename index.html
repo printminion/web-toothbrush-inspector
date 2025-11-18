@@ -42,6 +42,17 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #718096;
         }
+
+        /* Tab Transitions */
+        .tab-content {
+            transition: opacity 0.2s ease-in-out;
+        }
+        .tab-btn.active {
+            border-bottom: 2px solid #60a5fa; /* blue-400 */
+            color: #60a5fa;
+            background-color: rgba(96, 165, 250, 0.1);
+        }
+
         canvas {
             width: 100%;
             height: 100%;
@@ -168,271 +179,313 @@
         </div>
 
         <!-- Main Content Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Column 1: Data Panel with Tabs -->
+        <div class="lg:col-span-1 flex flex-col h-[800px]"> <!-- Fixed height for alignment -->
+            <div class="bg-gray-800 border border-gray-700 rounded-xl shadow-lg flex flex-col h-full overflow-hidden">
 
-            <!-- Column 1: Data Dashboard -->
-            <div class="lg:col-span-1 space-y-2">
-                <h2 class="text-lg font-semibold mb-1">Device Data</h2>
-                
-                <!-- Battery -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Battery Level</h3>
-                    <p id="data-battery" class="text-xl font-bold text-white">--- %</p>
-                </div>
-                
-                <!-- Handle State -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Handle State</h3>
-                    <p id="data-handle-state" class="text-xl font-bold text-white">---</p>
-                </div>
-
-                <!-- Handle Time -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Handle Time</h3>
-                    <p id="data-handle-time" class="text-sm font-bold text-white">---</p>
-                </div>
-
-                <!-- Routine ID -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Routine ID</h3>
-                    <p id="data-routine-id" class="text-xl font-bold text-white">---</p>
+                <!-- Tabs Header -->
+                <div class="flex border-b border-gray-700 bg-gray-850">
+                    <button class="tab-btn active flex-1 py-3 text-sm font-medium text-gray-300 hover:text-white transition text-center focus:outline-none"
+                            data-tab="live">
+                        Live
+                    </button>
+                    <button class="tab-btn flex-1 py-3 text-sm font-medium text-gray-300 hover:text-white transition text-center focus:outline-none"
+                            data-tab="device">
+                        Device
+                    </button>
+                    <button class="tab-btn flex-1 py-3 text-sm font-medium text-gray-300 hover:text-white transition text-center focus:outline-none"
+                            data-tab="brush">
+                        Brush
+                    </button>
+                    <button class="tab-btn flex-1 py-3 text-sm font-medium text-gray-300 hover:text-white transition text-center focus:outline-none"
+                            data-tab="debug">
+                        Debug
+                    </button>
                 </div>
 
-                <!-- Motor Runtime -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Motor Runtime</h3>
-                    <p id="data-motor-runtime" class="text-sm font-bold text-white">---</p>
-                </div>
+                <!-- Tab Content Area -->
+                <div class="p-0 flex-grow overflow-y-auto custom-scrollbar relative">
+                    <!-- Column 1: Data Dashboard -->
+                    <!-- TAB 1: LIVE DATA -->
+                    <div id="tab-live" class="tab-content p-4 space-y-3 absolute inset-0 overflow-y-auto active">
+                        <h2 class="text-lg font-semibold mb-1">Device Data</h2>
 
-                <!-- Brushing Mode -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brushing Mode</h3>
-                    <p id="data-mode" class="text-xl font-bold text-white">---</p>
-                </div>
+                        <!-- Battery -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Battery Level</h3>
+                            <p id="data-battery" class="text-xl font-bold text-white">--- %</p>
+                        </div>
 
-                <!-- Session State -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Session State</h3>
-                    <p id="data-session-state" class="text-xl font-bold text-white">---</p>
-                </div>
+                        <!-- Handle State -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Handle State</h3>
+                            <p id="data-handle-state" class="text-xl font-bold text-white">---</p>
+                        </div>
 
-                <!-- Current Session ID -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Current Session ID</h3>
-                    <p id="data-session-id" class="text-xl font-bold text-white">---</p>
-                </div>
+                        <!-- Handle Time -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Handle Time</h3>
+                            <p id="data-handle-time" class="text-sm font-bold text-white">---</p>
+                        </div>
 
-                <!-- Routine Number -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Routine Number</h3>
-                    <p id="data-routine-number" class="text-xl font-bold text-white">---</p>
-                </div>
+                        <!-- Routine ID -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Routine ID</h3>
+                            <p id="data-routine-id" class="text-xl font-bold text-white">---</p>
+                        </div>
 
-                <!-- Routine Length -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Routine Length</h3>
-                    <p id="data-routine-length" class="text-sm font-bold text-white">---</p>
-                </div>
+                        <!-- Motor Runtime -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Motor Runtime</h3>
+                            <p id="data-motor-runtime" class="text-sm font-bold text-white">---</p>
+                        </div>
 
-                <!-- Active Time -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Active Time</h3>
-                    <p id="data-active-time" class="text-xl font-bold text-white">---</p>
-                </div>
+                        <!-- Brushing Mode -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brushing Mode</h3>
+                            <p id="data-mode" class="text-xl font-bold text-white">---</p>
+                        </div>
 
-                <!-- Brushing Strength -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brushing Strength</h3>
-                    <p id="data-strength" class="text-xl font-bold text-white">---</p>
-                </div>
+                        <!-- Session State -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Session State</h3>
+                            <p id="data-session-state" class="text-xl font-bold text-white">---</p>
+                        </div>
 
-                <!-- Brush Head Information Header -->
-                <div class="col-span-1 mt-2">
-                    <h2 class="text-lg font-semibold mb-1 text-green-300">Brush Head Information</h2>
-                </div>
+                        <!-- Current Session ID -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Current Session ID</h3>
+                            <p id="data-session-id" class="text-xl font-bold text-white">---</p>
+                        </div>
 
-                <!-- Brush Head ID -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head ID (Hex)</h3>
-                    <p id="data-brush-serial" class="text-base font-bold text-white font-mono">---</p>
-                </div>
+                        <!-- Routine Number -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Routine Number</h3>
+                            <p id="data-routine-number" class="text-xl font-bold text-white">---</p>
+                        </div>
 
-                <!-- NFC Tag Version -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">NFC Tag Version</h3>
-                    <p id="data-nfc-tag-version" class="text-base font-bold text-white">---</p>
-                </div>
+                        <!-- Routine Length -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Routine Length</h3>
+                            <p id="data-routine-length" class="text-sm font-bold text-white">---</p>
+                        </div>
 
-                <!-- Factory Mode -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Factory Mode</h3>
-                    <p id="data-factory-mode" class="text-base font-bold text-white">---</p>
-                </div>
+                        <!-- Active Time -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Active Time</h3>
+                            <p id="data-active-time" class="text-xl font-bold text-white">---</p>
+                        </div>
 
-                <!-- Lifetime Limit -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Lifetime Limit</h3>
-                    <p id="data-lifetime-limit" class="text-base font-bold text-white">---</p>
-                </div>
+                        <!-- Brushing Strength -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brushing Strength</h3>
+                            <p id="data-strength" class="text-xl font-bold text-white">---</p>
+                        </div>
+                    </div>
+                    <!-- TAB 2: DEVICE INFO -->
+                    <div id="tab-brush" class="tab-content hidden p-4 space-y-3 absolute inset-0 overflow-y-auto">
 
-                <!-- Brush Type -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head Type</h3>
-                    <p id="data-brush-type" class="text-base font-bold text-white">---</p>
-                </div>
+                        <!-- Brush Head Information Header -->
+                        <div class="col-span-1 mt-2">
+                            <h2 class="text-lg font-semibold mb-1 text-green-300">Brush Head Information</h2>
+                        </div>
 
-                <!-- Brush Usage -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head Usage</h3>
-                    <p id="data-brush-usage" class="text-xl font-bold text-white">---</p>
-                </div>
+                        <!-- Brush Head ID -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head ID (Hex)</h3>
+                            <p id="data-brush-serial" class="text-base font-bold text-white font-mono">---</p>
+                        </div>
 
-                <!-- Brush Head Char 4270 -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 4270</h3>
-                    <p id="data-brush-head-4270" class="text-base font-bold text-white">---</p>
-                </div>
+                        <!-- NFC Tag Version -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">NFC Tag Version</h3>
+                            <p id="data-nfc-tag-version" class="text-base font-bold text-white">---</p>
+                        </div>
 
-                <!-- Brush Head Char 4280 -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 4280</h3>
-                    <p id="data-brush-head-4280" class="text-base font-bold text-white">---</p>
-                </div>
+                        <!-- Factory Mode -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Factory Mode</h3>
+                            <p id="data-factory-mode" class="text-base font-bold text-white">---</p>
+                        </div>
 
-                <!-- Brush Head Char 42A2 -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 42A2</h3>
-                    <p id="data-brush-head-42a2" class="text-base font-bold text-white">---</p>
-                </div>
+                        <!-- Lifetime Limit -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Lifetime Limit</h3>
+                            <p id="data-lifetime-limit" class="text-base font-bold text-white">---</p>
+                        </div>
 
-                <!-- Brush Head Char 42A4 -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 42A4</h3>
-                    <p id="data-brush-head-42a4" class="text-base font-bold text-white">---</p>
-                </div>
+                        <!-- Brush Type -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head Type</h3>
+                            <p id="data-brush-type" class="text-base font-bold text-white">---</p>
+                        </div>
 
-                <!-- Brush Head Char 42A6 -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 42A6</h3>
-                    <p id="data-brush-head-42a6" class="text-base font-bold text-white">---</p>
-                </div>
+                        <!-- Brush Usage -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head Usage</h3>
+                            <p id="data-brush-usage" class="text-xl font-bold text-white">---</p>
+                        </div>
 
-                <!-- Brush Head NFC URL -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">NFC Brush Head URL</h3>
-                    <p id="data-brush-head-nfc-url" class="text-sm font-bold text-white break-all">---</p>
-                </div>
+                        <!-- Brush Head Char 4270 -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 4270</h3>
+                            <p id="data-brush-head-4270" class="text-base font-bold text-white">---</p>
+                        </div>
 
-                <!-- Brush Head Char 42C0 -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 42C0</h3>
-                    <p id="data-brush-head-42c0" class="text-base font-bold text-white">---</p>
-                </div>
+                        <!-- Brush Head Char 4280 -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 4280</h3>
+                            <p id="data-brush-head-4280" class="text-base font-bold text-white">---</p>
+                        </div>
 
-                <!-- Diagnostic Information Header -->
-                <div class="col-span-1 mt-2">
-                    <h2 class="text-lg font-semibold mb-1 text-yellow-300">Diagnostic Information</h2>
-                </div>
+                        <!-- Brush Head Char 42A2 -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 42A2</h3>
+                            <p id="data-brush-head-42a2" class="text-base font-bold text-white">---</p>
+                        </div>
 
-                <!-- Error Persistent -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Error (Persistent)</h3>
-                    <p id="data-error-persistent" class="text-base font-bold text-white">---</p>
-                </div>
+                        <!-- Brush Head Char 42A4 -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 42A4</h3>
+                            <p id="data-brush-head-42a4" class="text-base font-bold text-white">---</p>
+                        </div>
 
-                <!-- Error Volatile -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Error (Volatile)</h3>
-                    <p id="data-error-volatile" class="text-base font-bold text-white">---</p>
-                </div>
+                        <!-- Brush Head Char 42A6 -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 42A6</h3>
+                            <p id="data-brush-head-42a6" class="text-base font-bold text-white">---</p>
+                        </div>
 
-                <!-- Proximity Value -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Proximity Value</h3>
-                    <p id="data-proximity-value" class="text-base font-bold text-white">---</p>
-                </div>
+                        <!-- Brush Head NFC URL -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">NFC Brush Head URL</h3>
+                            <p id="data-brush-head-nfc-url" class="text-sm font-bold text-white break-all">---</p>
+                        </div>
 
-                <!-- Pressure Sensor -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Pressure Sensor</h3>
-                    <p id="data-pressure-sensor" class="text-base font-bold text-white">---</p>
-                </div>
+                        <!-- Brush Head Char 42C0 -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 42C0</h3>
+                            <p id="data-brush-head-42c0" class="text-base font-bold text-white">---</p>
+                        </div>
+                    </div>
+                    <!-- TAB 3: BRUSH HEAD -->
+                    <div id="tab-debug" class="tab-content hidden p-4 space-y-3 absolute inset-0 overflow-y-auto">
+                        <!-- Diagnostic Information Header -->
+                        <div class="col-span-1 mt-2">
+                            <h2 class="text-lg font-semibold mb-1 text-yellow-300">Diagnostic Information</h2>
+                        </div>
 
-                <!-- Invalid Charger Count -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Invalid Charger Count</h3>
-                    <p id="data-invalid-charger-count" class="text-base font-bold text-white">---</p>
-                </div>
+                        <!-- Error Persistent -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Error (Persistent)</h3>
+                            <p id="data-error-persistent" class="text-base font-bold text-white">---</p>
+                        </div>
 
-                <!-- Debug Info -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md col-span-1">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Debug Information</h3>
-                    <p id="data-debug-info" class="text-sm font-bold text-white break-all">---</p>
-                </div>
+                        <!-- Error Volatile -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Error (Volatile)</h3>
+                            <p id="data-error-volatile" class="text-base font-bold text-white">---</p>
+                        </div>
 
-                <!-- Device Information Header -->
-                <div class="col-span-1 mt-2">
-                    <h2 class="text-lg font-semibold mb-1 text-blue-300">Device Information</h2>
-                </div>
+                        <!-- Proximity Value -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Proximity Value</h3>
+                            <p id="data-proximity-value" class="text-base font-bold text-white">---</p>
+                        </div>
 
-                <!-- Manufacturer -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Manufacturer</h3>
-                    <p id="data-manufacturer" class="text-base font-bold text-white">---</p>
-                </div>
+                        <!-- Pressure Sensor -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Pressure Sensor</h3>
+                            <p id="data-pressure-sensor" class="text-base font-bold text-white">---</p>
+                        </div>
 
-                <!-- Model Number -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Model Number</h3>
-                    <p id="data-model" class="text-base font-bold text-white">---</p>
-                </div>
+                        <!-- Invalid Charger Count -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Invalid Charger Count</h3>
+                            <p id="data-invalid-charger-count" class="text-base font-bold text-white">---</p>
+                        </div>
 
-                <!-- Device Serial -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Device Serial Number</h3>
-                    <p id="data-device-serial" class="text-sm font-bold text-white font-mono">---</p>
-                </div>
+                        <!-- Debug Info -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md col-span-1">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Debug Information</h3>
+                            <p id="data-debug-info" class="text-sm font-bold text-white break-all">---</p>
+                        </div>
 
-                <!-- Firmware Version -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Firmware Version</h3>
-                    <p id="data-firmware" class="text-sm font-bold text-white">---</p>
-                </div>
+                    </div>
+                    <!-- TAB 4: DEBUG -->
+                    <div id="tab-device" class="tab-content hidden p-4 space-y-3 absolute inset-0 overflow-y-auto">
+                        <!-- Device Information Header -->
+                        <div class="col-span-1 mt-2">
+                            <h2 class="text-lg font-semibold mb-1 text-blue-300">Device Information</h2>
+                        </div>
 
-                <!-- Hardware Revision -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Hardware Revision</h3>
-                    <p id="data-hardware" class="text-sm font-bold text-white">---</p>
-                </div>
+                        <!-- Manufacturer -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Manufacturer</h3>
+                            <p id="data-manufacturer" class="text-base font-bold text-white">---</p>
+                        </div>
 
-                <!-- Software Revision -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Software Revision</h3>
-                    <p id="data-software" class="text-sm font-bold text-white">---</p>
-                </div>
+                        <!-- Model Number -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Model Number</h3>
+                            <p id="data-model" class="text-base font-bold text-white">---</p>
+                        </div>
 
-                <!-- Sensor Configuration -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">Sensor Config (4120)</h3>
-                    <p id="data-sensor-config" class="text-sm font-bold text-white">---</p>
-                </div>
+                        <!-- Device Serial -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Device Serial Number</h3>
+                            <p id="data-device-serial" class="text-sm font-bold text-white font-mono">---</p>
+                        </div>
 
-                <!-- System ID -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">System ID</h3>
-                    <p id="data-system-id" class="text-sm font-bold text-white">---</p>
-                </div>
+                        <!-- Firmware Version -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Firmware Version</h3>
+                            <p id="data-firmware" class="text-sm font-bold text-white">---</p>
+                        </div>
 
-                <!-- IEEE Regulatory Data -->
-                <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                    <h3 class="text-xs font-medium text-gray-400 uppercase">IEEE 11073 Regulatory</h3>
-                    <p id="data-ieee-regulatory" class="text-sm font-bold text-white">---</p>
-                </div>
+                        <!-- Hardware Revision -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Hardware Revision</h3>
+                            <p id="data-hardware" class="text-sm font-bold text-white">---</p>
+                        </div>
+
+                        <!-- Software Revision -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Software Revision</h3>
+                            <p id="data-software" class="text-sm font-bold text-white">---</p>
+                        </div>
+
+                        <!-- Sensor Configuration -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">Sensor Config (4120)</h3>
+                            <p id="data-sensor-config" class="text-sm font-bold text-white">---</p>
+                        </div>
+
+                        <!-- System ID -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">System ID</h3>
+                            <p id="data-system-id" class="text-sm font-bold text-white">---</p>
+                        </div>
+
+                        <!-- IEEE Regulatory Data -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">IEEE 11073 Regulatory</h3>
+                            <p id="data-ieee-regulatory" class="text-sm font-bold text-white">---</p>
+                        </div>
 
                 <!-- PnP ID -->
                 <div class="bg-gray-800 p-2 rounded-lg shadow-md">
                     <h3 class="text-xs font-medium text-gray-400 uppercase">PnP ID</h3>
                     <p id="data-pnp-id" class="text-sm font-bold text-white">---</p>
+                </div>
+            </div>
+                        <!-- PnP ID -->
+                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
+                            <h3 class="text-xs font-medium text-gray-400 uppercase">PnP ID</h3>
+                            <p id="data-pnp-id" class="text-sm font-bold text-white">---</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -658,6 +711,38 @@
          *
          * ═══════════════════════════════════════════════════════════════
          */
+
+        /*
+         * ═══════════════════════════════════════════════════════════════
+         * UX & TABS LOGIC
+         * ═══════════════════════════════════════════════════════════════
+         */
+
+        // Tab Switching Logic
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('active', 'text-blue-400', 'border-b-2', 'border-blue-400');
+                    btn.classList.add('text-gray-400');
+                });
+
+                // Add active class to clicked button
+                button.classList.add('active');
+
+                console.log('button', button);
+                // Hide all tab content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+
+                // Show target tab content
+                const tabId = button.getAttribute('data-tab');
+                document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+                document.getElementById(`tab-${tabId}`).classList.add('active');
+                console.log('tabId', tabId, document.getElementById(`tab-${tabId}`));
+            });
+        });
 
         // ═══════════════════════════════════════════════════════════════
         // BLUETOOTH CONFIGURATION
