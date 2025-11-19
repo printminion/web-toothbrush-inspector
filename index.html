@@ -224,81 +224,68 @@
 
                 <!-- Tab Content Area -->
                 <div class="p-0 flex-grow overflow-y-auto custom-scrollbar relative">
-                    <!-- Column 1: Data Dashboard -->
                     <!-- TAB 1: LIVE DATA -->
                     <div id="tab-live" class="tab-content p-4 space-y-3 absolute inset-0 overflow-y-auto active">
-                        <h2 class="text-lg font-semibold mb-1">Device Data</h2>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Real-time Telemetry</h3>
 
-                        <!-- Battery -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Battery Level</h3>
-                            <p id="data-battery" class="text-xl font-bold text-white">--- %</p>
+                        <!-- Battery Card -->
+                        <div class="bg-gray-750 p-4 rounded-lg border border-gray-600">
+                            <div class="flex justify-between items-end mb-2">
+                                <span class="text-sm text-gray-400">Battery Level</span>
+                                <span id="data-battery" class="text-xl font-bold text-white">-- %</span>
+                            </div>
+                            <div class="w-full bg-gray-900 rounded-full h-2.5">
+                                <div id="visual-battery-bar" class="bg-green-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
                         </div>
 
-                        <!-- Handle State -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Handle State</h3>
-                            <p id="data-handle-state" class="text-xl font-bold text-white">---</p>
+                        <!-- Primary States -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-gray-750 p-3 rounded-lg border border-gray-600">
+                                <div class="text-xs text-gray-400 mb-1">Handle State</div>
+                                <div id="data-handle-state" class="font-bold text-white text-lg">---</div>
+                            </div>
+                            <div class="bg-gray-750 p-3 rounded-lg border border-gray-600">
+                                <div class="text-xs text-gray-400 mb-1">Mode</div>
+                                <div id="data-mode" class="font-bold text-blue-300 text-lg truncate">---</div>
+                            </div>
+                        </div>
+                        <!-- Secondary Metrics -->
+                        <div class="bg-gray-750 p-3 rounded-lg border border-gray-600 space-y-3">
+                            <div class="flex justify-between border-b border-gray-600 pb-2">
+                                <span class="text-sm text-gray-400">Active Time</span>
+                                <span id="data-active-time" class="font-mono font-bold text-white">---</span>
+                            </div>
+                            <div class="flex justify-between border-b border-gray-600 pb-2">
+                                <span class="text-sm text-gray-400">Strength</span>
+                                <span id="data-strength" class="font-mono font-bold text-white">---</span>
+                            </div>
+                            <div class="flex justify-between border-b border-gray-600 pb-2">
+                                <span class="text-sm text-gray-400">Pressure</span>
+                                <span id="data-pressure-sensor" class="font-mono font-bold text-red-300">---</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-400">Session State</span>
+                                <span id="data-session-state" class="font-mono font-bold text-white">---</span>
+                            </div>
                         </div>
 
-                        <!-- Handle Time -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Handle Time</h3>
-                            <p id="data-handle-time" class="text-sm font-bold text-white">---</p>
+                        <div class="bg-gray-750 p-3 rounded-lg border border-gray-600">
+                            <div class="text-xs text-gray-400 mb-1">Routine Info</div>
+                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                <div>ID: <span id="data-routine-id" class="text-white font-bold">--</span></div>
+                                <div>#: <span id="data-routine-number" class="text-white font-bold">--</span></div>
+                            </div>
                         </div>
 
-                        <!-- Routine ID -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Routine ID</h3>
-                            <p id="data-routine-id" class="text-xl font-bold text-white">---</p>
+                        <div class="bg-gray-750 p-3 rounded-lg border border-gray-600">
+                            <div class="text-xs text-gray-400">Handle Time</div>
+                            <div id="data-handle-time" class="text-sm font-mono text-white mt-1">---</div>
                         </div>
 
-                        <!-- Motor Runtime -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Motor Runtime</h3>
-                            <p id="data-motor-runtime" class="text-sm font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Brushing Mode -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brushing Mode</h3>
-                            <p id="data-mode" class="text-xl font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Session State -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Session State</h3>
-                            <p id="data-session-state" class="text-xl font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Current Session ID -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Current Session ID</h3>
-                            <p id="data-session-id" class="text-xl font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Routine Number -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Routine Number</h3>
-                            <p id="data-routine-number" class="text-xl font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Routine Length -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Routine Length</h3>
-                            <p id="data-routine-length" class="text-sm font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Active Time -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Active Time</h3>
-                            <p id="data-active-time" class="text-xl font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Brushing Strength -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brushing Strength</h3>
-                            <p id="data-strength" class="text-xl font-bold text-white">---</p>
+                         <div class="bg-gray-750 p-3 rounded-lg border border-gray-600">
+                            <div class="text-xs text-gray-400">Motor Runtime</div>
+                            <div id="data-motor-runtime" class="text-sm font-mono text-white mt-1">---</div>
                         </div>
                     </div>
                     <!-- TAB 2: DEVICE INFO -->
@@ -533,6 +520,11 @@
                             <p id="data-pnp-id" class="text-sm font-bold text-white">---</p>
                         </div>
                     </div>
+                </div>
+                <!-- Static Bottom Status -->
+                <div class="bg-gray-900 p-3 border-t border-gray-800 text-xs flex justify-between items-center text-gray-500">
+                    <span id="data-session-id">Session: --</span>
+                    <span id="data-routine-length">Len: --</span>
                 </div>
             </div>
         </div>
