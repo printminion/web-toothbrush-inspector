@@ -157,7 +157,8 @@
 
         <!-- Status & Instructions -->
         <div class="card p-6 mb-6">
-            <div class="flex items-center justify-between flex-wrap gap-4">
+            <div class="flex justify-between flex-wrap gap-4">
+                <div class="flex items-center">
                     <button id="connect-button" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform text-nowrap flex items-center">
                         <span class="mr-2 text-xl">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">
@@ -167,14 +168,16 @@
                         </span>
                         Connect your toothbrush
                     </button>
-            </div>
-
-            <!-- Connection Instructions -->
-            <div id="connection-instructions" class="mt-4 p-4 bg-gray-800/50 rounded-lg">
-                <p class="text-sm text-blue-200">
-                    <strong class="font-semibold">BEST METHOD:</strong> 🔌 Place toothbrush on charger (LED should light up) → Click Connect → Select device
-                </p>
-                <p class="text-xs text-gray-400 mt-1">Alternative: Press power button → immediately click Connect</p>
+                </div>
+                <div class="flex grow items-center gap-3">
+                    <!-- Connection Instructions -->
+                    <div id="connection-instructions" class="grow p-4 bg-gray-800/50 rounded-lg">
+                        <p class="text-sm text-blue-200">
+                            <strong class="font-semibold">BEST METHOD:</strong> 🔌 Place toothbrush on charger (LED should light up) → Click Connect → Select device
+                        </p>
+                        <p class="text-xs text-gray-400 mt-1">Alternative: Press power button → immediately click Connect</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Status Message -->
