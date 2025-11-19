@@ -738,7 +738,6 @@
                 // Add active class to clicked button
                 button.classList.add('active');
 
-                console.log('button', button);
                 // Hide all tab content
                 document.querySelectorAll('.tab-content').forEach(content => {
                     content.classList.add('hidden');
@@ -748,7 +747,6 @@
                 const tabId = button.getAttribute('data-tab');
                 document.getElementById(`tab-${tabId}`).classList.remove('hidden');
                 document.getElementById(`tab-${tabId}`).classList.add('active');
-                console.log('tabId', tabId, document.getElementById(`tab-${tabId}`));
             });
         });
 
