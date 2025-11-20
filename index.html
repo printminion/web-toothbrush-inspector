@@ -318,77 +318,6 @@
                             <div id="data-brush-head-nfc-url" class="text-xs break-all text-blue-400">---</div>
                         </div>
 
-                        <!-- NFC Tag Version -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">NFC Tag Version</h3>
-                            <p id="data-nfc-tag-version" class="text-base font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Factory Mode -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Factory Mode</h3>
-                            <p id="data-factory-mode" class="text-base font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Lifetime Limit -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Lifetime Limit</h3>
-                            <p id="data-lifetime-limit" class="text-base font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Brush Type -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head Type</h3>
-                            <p id="data-brush-type" class="text-base font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Brush Usage -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head Usage</h3>
-                            <p id="data-brush-usage" class="text-xl font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Brush Head Char 4270 -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 4270</h3>
-                            <p id="data-brush-head-4270" class="text-base font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Brush Head Char 4280 -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 4280</h3>
-                            <p id="data-brush-head-4280" class="text-base font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Brush Head Char 42A2 -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 42A2</h3>
-                            <p id="data-brush-head-42a2" class="text-base font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Brush Head Char 42A4 -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 42A4</h3>
-                            <p id="data-brush-head-42a4" class="text-base font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Brush Head Char 42A6 -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 42A6</h3>
-                            <p id="data-brush-head-42a6" class="text-base font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Brush Head NFC URL -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">NFC Brush Head URL</h3>
-                            <p id="data-brush-head-nfc-url" class="text-sm font-bold text-white break-all">---</p>
-                        </div>
-
-                        <!-- Brush Head Char 42C0 -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Brush Head 42C0</h3>
-                            <p id="data-brush-head-42c0" class="text-base font-bold text-white">---</p>
-                        </div>
                         <!-- Collapsible Advanced Brush Info -->
                         <details class="group">
                             <summary class="flex justify-between items-center font-medium cursor-pointer list-none text-xs text-gray-500 hover:text-white transition">
@@ -411,47 +340,46 @@
                     </div>
                     <!-- TAB 3: BRUSH HEAD -->
                     <div id="tab-debug" class="tab-content hidden p-4 space-y-3 absolute inset-0 overflow-y-auto">
-                        <!-- Diagnostic Information Header -->
-                        <div class="col-span-1 mt-2">
-                            <h2 class="text-lg font-semibold mb-1 text-yellow-300">Diagnostic Information</h2>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Raw Diagnostic Data</h3>
+
+                        <div class="space-y-2 text-xs font-mono">
+                            <div class="bg-black/30 p-2 rounded border border-gray-700">
+                                <span class="text-red-400">Error (Persistent):</span> <span id="data-error-persistent">---</span>
+                            </div>
+                            <div class="bg-black/30 p-2 rounded border border-gray-700">
+                                <span class="text-orange-400">Error (Volatile):</span> <span id="data-error-volatile">---</span>
+                            </div>
+                            <div class="bg-black/30 p-2 rounded border border-gray-700">
+                                <span class="text-blue-400">Sensor Config:</span> <span id="data-sensor-config">---</span>
+                            </div>
+                            <div class="bg-black/30 p-2 rounded border border-gray-700">
+                                <span class="text-gray-400">System ID:</span> <span id="data-system-id" class="break-all">---</span>
+                            </div>
+                            <div class="bg-black/30 p-2 rounded border border-gray-700">
+                                <span class="text-gray-400">PnP ID:</span> <span id="data-pnp-id" class="break-all">---</span>
+                            </div>
+                            <div class="bg-black/30 p-2 rounded border border-gray-700">
+                                <span class="text-gray-400">Proximity:</span> <span id="data-proximity-value">---</span>
+                            </div>
+                            <div class="bg-black/30 p-2 rounded border border-gray-700">
+                                <span class="text-gray-400">Inv. Charger:</span> <span id="data-invalid-charger-count">---</span>
+                            </div>
+                            <div class="bg-black/30 p-2 rounded border border-gray-700">
+                                <span class="text-gray-400">IEEE Reg:</span> <span id="data-ieee-regulatory" class="break-all">---</span>
+                            </div>
                         </div>
 
-                        <!-- Error Persistent -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Error (Persistent)</h3>
-                            <p id="data-error-persistent" class="text-base font-bold text-white">---</p>
+                        <div class="mt-4">
+                            <div class="text-xs text-gray-500 mb-1">Last Debug Packet:</div>
+                            <div id="data-debug-info" class="bg-black p-2 rounded text-xs font-mono text-green-500 h-20 overflow-y-auto border border-gray-700">---</div>
                         </div>
 
-                        <!-- Error Volatile -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Error (Volatile)</h3>
-                            <p id="data-error-volatile" class="text-base font-bold text-white">---</p>
+                        <div class="bg-gray-750 p-3 rounded-lg mt-4">
+                            <div class="text-xs text-gray-400 mb-2">Manual Controls</div>
+                            <button id="debug-packets-button" class="w-full bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 border border-purple-500/50 px-3 py-2 rounded transition text-xs font-bold">
+                                Capture Next Packet to Console
+                            </button>
                         </div>
-
-                        <!-- Proximity Value -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Proximity Value</h3>
-                            <p id="data-proximity-value" class="text-base font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Pressure Sensor -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Pressure Sensor</h3>
-                            <p id="data-pressure-sensor" class="text-base font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Invalid Charger Count -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Invalid Charger Count</h3>
-                            <p id="data-invalid-charger-count" class="text-base font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Debug Info -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md col-span-1">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Debug Information</h3>
-                            <p id="data-debug-info" class="text-sm font-bold text-white break-all">---</p>
-                        </div>
-
                     </div>
                     <!-- TAB 4: DEBUG -->
                     <div id="tab-device" class="tab-content hidden p-4 space-y-3 absolute inset-0 overflow-y-auto">
