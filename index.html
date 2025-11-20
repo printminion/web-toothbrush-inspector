@@ -117,11 +117,17 @@
             background-color: var(--red-500);
         }
 
+
+        /* Collapsible panel state */
+        .collapsed {
+            display: none;
+        }
+
         /* Collapse panels by default on mobile devices */
         @media (max-width: 768px) {
             #three-info-content,
             #coordinate-content {
-                display: none !important;
+                display: none;
             }
         }
     </style>
@@ -1227,12 +1233,13 @@
         document.getElementById('three-info-toggle').addEventListener('click', () => {
             const content = document.getElementById('three-info-content');
             const icon = document.getElementById('three-info-toggle-icon');
-            const isHidden = window.getComputedStyle(content).display === 'none';
-            if (isHidden) {
-                content.style.display = 'block';
+            const isCollapsed = content.classList.contains('collapsed');
+            
+            if (isCollapsed) {
+                content.classList.remove('collapsed');
                 icon.textContent = '▼';
             } else {
-                content.style.display = 'none';
+                content.classList.add('collapsed');
                 icon.textContent = '▶';
             }
         });
@@ -1241,28 +1248,33 @@
         document.getElementById('coordinate-toggle').addEventListener('click', () => {
             const content = document.getElementById('coordinate-content');
             const icon = document.getElementById('coordinate-toggle-icon');
-            const isHidden = window.getComputedStyle(content).display === 'none';
-            if (isHidden) {
-                content.style.display = 'block';
+            const isCollapsed = content.classList.contains('collapsed');
+            
+            if (isCollapsed) {
+                content.classList.remove('collapsed');
                 icon.textContent = '▼';
             } else {
-                content.style.display = 'none';
+                content.classList.add('collapsed');
                 icon.textContent = '▶';
             }
         });
 
-        // Set initial icon states based on CSS media query (mobile collapsed by default)
+        // Set initial icon states based on viewport width (mobile collapsed by default)
         window.addEventListener('DOMContentLoaded', () => {
             const threeInfoContent = document.getElementById('three-info-content');
             const threeInfoIcon = document.getElementById('three-info-toggle-icon');
             const coordinateContent = document.getElementById('coordinate-content');
             const coordinateIcon = document.getElementById('coordinate-toggle-icon');
             
-            if (window.getComputedStyle(threeInfoContent).display === 'none') {
+            // On mobile (<=768px), add collapsed class and set icon
+            if (window.innerWidth <= 768) {
+                threeInfoContent.classList.add('collapsed');
+                coordinateContent.classList.add('collapsed');
                 threeInfoIcon.textContent = '▶';
-            }
-            if (window.getComputedStyle(coordinateContent).display === 'none') {
                 coordinateIcon.textContent = '▶';
+            } else {
+                threeInfoIcon.textContent = '▼';
+                coordinateIcon.textContent = '▼';
             }
         });
 
