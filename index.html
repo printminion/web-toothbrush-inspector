@@ -84,6 +84,26 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
         }
 
+
+        /* Battery bar */
+        .battery-bar {
+            height: 0.5rem;
+            border-radius: 0.25rem;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        .battery-bar.high {
+            background-color: var(--green-500);
+        }
+
+        .battery-bar.medium {
+            background-color: var(--yellow-500);
+        }
+
+        .battery-bar.low {
+            background-color: var(--red-500);
+        }
+
         /* Collapse panels by default on mobile devices */
         @media (max-width: 768px) {
             #three-info-content,
@@ -235,7 +255,7 @@
                                 <span id="data-battery" class="text-xl font-bold text-white">-- %</span>
                             </div>
                             <div class="w-full bg-gray-900 rounded-full h-2.5">
-                                <div id="visual-battery-bar" class="bg-green-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                <div id="visual-battery-bar" class="battery-bar bg-green-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
                             </div>
                         </div>
 
@@ -834,6 +854,7 @@
 
         const ui = {
             battery: document.getElementById('data-battery'),
+            visualBatteryBar: document.getElementById('visual-battery-bar'),
             handleState: document.getElementById('data-handle-state'),
             handleTime: document.getElementById('data-handle-time'),
             routineId: document.getElementById('data-routine-id'),
@@ -1789,7 +1810,23 @@
                 const batteryService = await server.getPrimaryService(BLE.SERVICES.BATTERY);
                 const batteryChar = await batteryService.getCharacteristic(BLE.CHARS.BATTERY_LEVEL);
                 const batteryValue = await batteryChar.readValue();
-                ui.battery.textContent = `${batteryValue.getUint8(0)} %`;
+                const batteryLevel = batteryValue.getUint8(0);
+                ui.battery.textContent = `${batteryLevel} %`;
+                
+                // Update visual battery bar
+                if (ui.visualBatteryBar) {
+                    ui.visualBatteryBar.style.width = `${batteryLevel}%`;
+                    // Remove all color classes
+                    ui.visualBatteryBar.classList.remove('high', 'medium', 'low');
+                    // Add appropriate color class based on battery level
+                    if (batteryLevel > 60) {
+                        ui.visualBatteryBar.classList.add('high');
+                    } else if (batteryLevel > 30) {
+                        ui.visualBatteryBar.classList.add('medium');
+                    } else {
+                        ui.visualBatteryBar.classList.add('low');
+                    }
+                }
                 
                 // Get Handle Service
                 const handleService = await server.getPrimaryService(BLE.SERVICES.HANDLE);
