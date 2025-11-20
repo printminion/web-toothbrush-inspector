@@ -455,69 +455,37 @@
                     </div>
                     <!-- TAB 4: DEBUG -->
                     <div id="tab-device" class="tab-content hidden p-4 space-y-3 absolute inset-0 overflow-y-auto">
-                        <!-- Device Information Header -->
-                        <div class="col-span-1 mt-2">
-                            <h2 class="text-lg font-semibold mb-1 text-blue-300">Device Information</h2>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Hardware Details</h3>
+
+                        <div class="bg-gray-750 p-3 rounded-lg border border-gray-600 space-y-3">
+                            <div>
+                                <div class="text-xs text-gray-400">Manufacturer</div>
+                                <div id="data-manufacturer" class="font-bold text-white">---</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-400">Model</div>
+                                <div id="data-model" class="font-bold text-white">---</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-400">Serial Number</div>
+                                <div id="data-device-serial" class="font-mono text-sm text-gray-300 break-all">---</div>
+                            </div>
                         </div>
 
-                        <!-- Manufacturer -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Manufacturer</h3>
-                            <p id="data-manufacturer" class="text-base font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Model Number -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Model Number</h3>
-                            <p id="data-model" class="text-base font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Device Serial -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Device Serial Number</h3>
-                            <p id="data-device-serial" class="text-sm font-bold text-white font-mono">---</p>
-                        </div>
-
-                        <!-- Firmware Version -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Firmware Version</h3>
-                            <p id="data-firmware" class="text-sm font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Hardware Revision -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Hardware Revision</h3>
-                            <p id="data-hardware" class="text-sm font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Software Revision -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Software Revision</h3>
-                            <p id="data-software" class="text-sm font-bold text-white">---</p>
-                        </div>
-
-                        <!-- Sensor Configuration -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">Sensor Config (4120)</h3>
-                            <p id="data-sensor-config" class="text-sm font-bold text-white">---</p>
-                        </div>
-
-                        <!-- System ID -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">System ID</h3>
-                            <p id="data-system-id" class="text-sm font-bold text-white">---</p>
-                        </div>
-
-                        <!-- IEEE Regulatory Data -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">IEEE 11073 Regulatory</h3>
-                            <p id="data-ieee-regulatory" class="text-sm font-bold text-white">---</p>
-                        </div>
-
-                        <!-- PnP ID -->
-                        <div class="bg-gray-800 p-2 rounded-lg shadow-md">
-                            <h3 class="text-xs font-medium text-gray-400 uppercase">PnP ID</h3>
-                            <p id="data-pnp-id" class="text-sm font-bold text-white">---</p>
+                        <div class="bg-gray-750 p-3 rounded-lg border border-gray-600 space-y-2">
+                            <h4 class="text-xs text-blue-400 font-bold uppercase">Versions</h4>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-400">Firmware</span>
+                                <span id="data-firmware" class="text-white">---</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-400">Hardware</span>
+                                <span id="data-hardware" class="text-white">---</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-400">Software</span>
+                                <span id="data-software" class="text-white">---</span>
+                            </div>
                         </div>
                     </div>
                 </div>
