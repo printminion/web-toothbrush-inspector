@@ -84,6 +84,19 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
         }
 
+        /* Blur overlay for disconnected state */
+        .blur-content {
+            filter: blur(4px);
+            pointer-events: none;
+            user-select: none;
+            transition: filter 0.3s ease;
+        }
+
+        .blur-content.connected {
+            filter: blur(0);
+            pointer-events: auto;
+            user-select: auto;
+        }
 
         /* Battery bar */
         .battery-bar {
@@ -217,7 +230,8 @@
         </div>
 
         <!-- Main Content Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- The 'blur-content' class is removed by JS when connected -->
+    <div id="dashboard-content" class="grid grid-cols-1 lg:grid-cols-3 gap-6 blur-content">
         <!-- Column 1: Data Panel with Tabs -->
         <div class="lg:col-span-1 flex flex-col h-[800px]"> <!-- Fixed height for alignment -->
             <div class="bg-gray-800 border border-gray-700 rounded-xl shadow-lg flex flex-col h-full overflow-hidden">
@@ -851,6 +865,7 @@
         const progressBar = document.getElementById('progress-bar');
         const progressText = document.getElementById('progress-text');
         const countdownTimer = document.getElementById('countdown-timer');
+        const dashboardContent = document.getElementById('dashboard-content');
 
         const ui = {
             battery: document.getElementById('data-battery'),
@@ -1712,6 +1727,9 @@
                 setTimeout(() => {
                     connectionProgress.classList.add('hidden');
                     setStatusSuccess('✅ Connected successfully! Data is now streaming.');
+                    
+                    // Remove blur effect from dashboard content
+                    dashboardContent.classList.add('connected');
                 }, 2000);
 
                 connectButton.disabled = false;
@@ -1722,6 +1740,9 @@
                 connectionProgress.classList.add('hidden');
                 connectButton.disabled = false;
                 countdownTimer.textContent = '';
+                
+                // Re-apply blur effect to dashboard content
+                dashboardContent.classList.remove('connected');
 
                 if (error.name === 'NotFoundError') {
                     log('❌ No device found. Make sure toothbrush is awake and nearby.');
@@ -1795,6 +1816,9 @@
             connectButton.onclick = connectDevice;
             connectButton.disabled = false;
             setStatusWarning('⚠️ Device disconnected. Toothbrush may have gone to sleep.');
+            
+            // Re-apply blur effect to dashboard content
+            dashboardContent.classList.remove('connected');
         }
 
         async function readStaticData() {
